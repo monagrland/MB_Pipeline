@@ -1,0 +1,25 @@
+name: mb_krona
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - _libgcc_mutex=0.1=main
+  - _openmp_mutex=4.5=1_gnu
+  - c-ares=1.17.1=h27cfd23_0
+  - ca-certificates=2021.7.5=h06a4308_1
+  - curl=7.78.0=h1ccaba5_0
+  - krb5=1.19.2=hac12032_0
+  - krona=2.8=pl5262hdfd78af_2
+  - libcurl=7.78.0=h0b77cf5_0
+  - libedit=3.1.20210714=h7f8727e_0
+  - libev=4.33=h7b6447c_0
+  - libgcc-ng=9.3.0=h5101ec6_17
+  - libgomp=9.3.0=h5101ec6_17
+  - libnghttp2=1.41.0=hf8bcb03_2
+  - libssh2=1.9.0=h1ba5d50_1
+  - libstdcxx-ng=9.3.0=hd4cf53a_17
+  - ncurses=6.2=he6710b0_1
+  - openssl=1.1.1l=h7f8727e_0
+  - perl=5.26.2=h14c3975_0
+  - zlib=1.2.11=h7b6447c_3
+prefix: /mnt/data/homes/krueger_l/.conda/envs/mb_krona

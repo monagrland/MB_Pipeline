@@ -1,0 +1,11 @@
+extra_fn_clean_exts:
+    - type: 'remove'
+      pattern: '_R1'
+      module:
+        - cutadapt
+        - trimmomatic
+    - type: 'remove'
+      pattern: '_R2'
+      module:
+        - cutadapt
+        - trimmomatic

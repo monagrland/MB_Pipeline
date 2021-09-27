@@ -1,5 +1,5 @@
 directory: "/home/krueger_l/Dokumente/Metabarcoding/Metabarcoding/FRANZ_processing/demux_trnL/01_RawData"
-output: "/home/krueger_l/Dokumente/Metabarcoding/trnL_results_DE"
+output: "/home/krueger_l/Dokumente/Metabarcoding/trnL_results_DE_multilvl"
 00_length_threshold: "100"
 01_adapter_trimming_options:
   - "-g CGAAATCGGTAGACGCTACG"
@@ -29,7 +29,11 @@ output: "/home/krueger_l/Dokumente/Metabarcoding/trnL_results_DE"
   - "--sizein"
   - "--maxaccepts 0"
   - "--maxrejects 0"
-11_database: "/mnt/data/databases/its2.plantae.de_complete_sintax_db.fa"
-11_threshold: "0.8"
+11_direct_dbs:
+  - "/mnt/data/databases/trnl.plantae.de_complete_sintax_db.fa"
+  - "/mnt/data/databases/trnl.plantae.eu_complete_sintax_db.fa"
+11_hierarchical_db: "/mnt/data/databases/trnL_CD_nr_sintax.fasta"
+11_threshold: "0.95"
+threads: 8
 mqc_report: false
 taxonomy: true

@@ -29,7 +29,7 @@ rule all:
 	input:
 		output_lst()
 
-#
+
 # rule remove_short_reads:
 # 	input:
 # 		input_fw = config["directory"] + "/{prefix}_R1_{suffix}.gz",
@@ -204,7 +204,7 @@ rule generate_OTU_table:
 		search = config["output"] + "/06_derep_data/unique_reads.fasta",
 		db = config["output"] + "/08_zOTUs_nonchimeras/zOTUs_nonchimeras.fasta"
 	output:
-		config["output"] + "/09_OTU_table/otu_table.txt"
+		otu_table = config["output"] + "/09_OTU_table/otu_table.txt",
 	params:
 		options = " ".join(config["09_otu_table_options"]),
 	conda:
@@ -214,7 +214,7 @@ rule generate_OTU_table:
 	log:
 		config["output"] + "/logs/09_OTU_table/all_reads.txt"
 	shell:
-		"vsearch --usearch_global {input.search} --db {input.db} {params.options} --otutabout {output} &>> {log}"
+		"vsearch --usearch_global {input.search} --db {input.db} {params.options} --otutabout {output.otu_table} &>> {log}"
 
 rule generate_report:
 	input:
@@ -236,10 +236,10 @@ rule generate_report:
 
 rule taxonomy:
 	input:
-		zOTUs = config["output"] + "/08_zOTUs_nonchimeras/zOTUs_nonchimeras.fasta",
+		zOTUs = config["output"] + "/08_zOTUs_nonchimeras/zOTUs_nonchimeras.fasta"
 	output:
-		config["output"] + "/11_taxonomy/taxonomy.txt",
-		config["output"] + "/11_taxonomy/taxonomy.krona.txt"
+		base = config["output"] + "/11_taxonomy/taxonomy.txt",
+		plot = config["output"] + "/11_taxonomy/taxonomy.krona.txt"
 	params:
 		direct_db_lst = config["11_direct_dbs"],
 		hierarchical_db = config["11_hierarchical_db"],
@@ -249,96 +249,14 @@ rule taxonomy:
 		config["threads"]
 	message:
 		"Starting Multilevel Taxonomic Classification"
+	conda:
+		os.path.join(workflow.basedir, "envs/mb_taxonomy.yaml")
 	shell:
-		"Python3 scripts/multilvl_taxonomic_classification.py -d {params.direct_db_lst} -z {input.zOTUs} -t {params.threshold} -o {output} -n {threads} -p {params.hierarchical_db} -k {params.keep_results}"
+		"""
+		python3 scripts/test.py
+		python3 scripts/multilvl_taxonomic_classification.py -d {params.direct_db_lst} -z {input.zOTUs} -t {params.threshold} -o {output.base} -n {threads} -p {params.hierarchical_db} -k {params.keep_results}
+		"""
 
-
-# rule taxonomy:
-# 	input:
-# 		zOTUs = config["output"] + "/08_zOTUs_nonchimeras/zOTUs_nonchimeras.fasta",
-# 		db = config["11_database"]
-# 	output:
-# 		config["output"] + "/11_taxonomy/taxonomy.txt"
-# 	conda:
-# 		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
-# 	message:
-# 		"Determining Taxonomy"
-# 	log:
-# 		config["output"] + "/logs/11_taxonomy/silva.txt"
-# 	shell:
-# # 		"vsearch --sintax {input.zOTUs} --db {input.db} --sintax_cutoff 0.9 --tabbedout {output}"
-#
-# rule merge_tables:
-# 	input:
-# 		otu_table = config["output"] + "/09_OTU_table/otu_table.txt",
-# 		tax_table = config["output"] + "/11_taxonomy/taxonomy.txt"
-# 	output:
-# 		merged_table = config["output"] + "/12_merged/otu_and_tax_merged.txt"
-# 	message:
-# 		"Merging OTU and Taxonomy Tables"
-# 	run:
-# 		otu_table = pd.read_csv(input.otu_table,sep='\t', index_col = 0)
-# 		tax_table = pd.read_csv(input.tax_table,sep=r'\,|\t', engine='python', header = None, error_bad_lines=False, index_col = 0)
-# 		merged_table = pd.merge(otu_table, tax_table.iloc[:,:7], left_index=True, right_index=True)
-# 		merged_table.to_csv(output[0], sep='\t')
-#
-# rule prepare_taxonomy_for_krona:
-# 	input:
-# 		tax_table = config["output"] + "/11_taxonomy/taxonomy.txt"
-# 	output:
-# 		out_path = config["output"] + "/11_taxonomy/taxonomy_for_krona.txt"
-# 	message:
-# 		"Creating Taxonomy Table for Krona Plots"
-# 	run:
-# 		threshold = float(config["11_threshold"])
-# 		d = []
-# 		with open(input.tax_table) as csv_file:
-# 		    areader = csv.reader(csv_file)
-# 		    max_elems = 0
-# 		    for row in areader:
-# 		        if max_elems < len(row): max_elems = len(row)
-# 		    csv_file.seek(0)
-# 		    for i, row in enumerate(areader):
-# 		        d.append(row + ["" for x in range (max_elems - len(row))])
-# 		tax_df = pd.DataFrame(d)
-#
-# 		first_col = tax_df.iloc[:,0]
-# 		otu_name_lst = []
-# 		domain_lst = []
-# 		for entry in first_col.tolist():
-# 		    split = entry.split()
-# 		    otu_name_lst.append(split[0])
-# 		    domain_lst.append(split[1])
-#
-# 		tax_df.index = otu_name_lst
-# 		tax_df[0] = domain_lst
-# 		last_row = tax_df.iloc[:,6]
-# 		species_lst = []
-# 		for j in last_row.tolist():
-# 		    species_lst.append(j.split()[0])
-#
-# 		tax_df[6] = species_lst
-# 		tax_df = tax_df.iloc[:,:7]
-#
-# 		names_lst = []
-# 		values_lst = []
-# 		for i,r in tax_df.iterrows():
-# 		    names = []
-# 		    values = []
-# 		    for entry in r.tolist():
-# 		        split = (entry.rsplit("("),1)[0]
-# 		        names.append(split[0])
-# 		        values.append(split[1].replace(")",""))
-# 		    names_lst.append(names)
-# 		    values_lst.append(values)
-#
-# 		for i, row in enumerate(values_lst):
-# 		    for j, value in enumerate(row):
-# 		        if float(value) <= threshold:
-# 		            names_lst[i][j] = ""
-#
-# 		names_df = pd.DataFrame(names_lst)
-# 		names_df.to_csv(output.out_path, sep = "\t", index=False, header=False)
 
 rule krona:
 	input:

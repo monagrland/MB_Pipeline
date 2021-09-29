@@ -22,4 +22,3 @@ dependencies:
   - openssl=1.1.1l=h7f8727e_0
   - perl=5.26.2=h14c3975_0
   - zlib=1.2.11=h7b6447c_3
-prefix: /mnt/data/homes/krueger_l/.conda/envs/mb_krona

@@ -12,6 +12,7 @@ import os
 import argparse
 import re
 import csv
+import sys
 
 
 def arg():
@@ -25,13 +26,14 @@ def arg():
     parser.add_argument("-k", "--keep_results", help = "Keep Intermediate results of the different levels of taxonomic classification or not. Accepts 'True' and 'False'", type = bool, default = False)
     return(parser.parse_args())
 
-def direct_classification(zOTUs, db, threshold, output, threads, run_nr):
+def direct_classification(zOTUs, db, threshold, output, threads, run_nr, conda):
     print(f"##### Direct Vsearch Classification level {run_nr} #####")
     output = f"{os.path.splitext(output)[0]}.{run_nr}.direct.txt"
     cmd = f"vsearch --usearch_global {zOTUs} -db {db} --id {threshold} --uc {output} --threads {threads}"
     conda_path = subprocess.check_output("conda info | grep 'base environment'", shell=True).decode("utf8").replace("base environment : ", "").replace("(read only)" , "").strip()
     conda_act_path = conda_path + "/etc/profile.d/conda.sh"
-    subprocess.run(f". {conda_act_path} && conda activate mb_vsearch && {cmd} && conda deactivate", shell=True)
+    subprocess.run(f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate", shell = True)
+
     
 def read_dir_classification(zOTUs_path, output, run_nr):
     tax_file = pd.read_csv(f"{os.path.splitext(output)[0]}.{run_nr}.direct.txt", sep = "\t", header = None)
@@ -45,13 +47,13 @@ def read_dir_classification(zOTUs_path, output, run_nr):
     hit_zOTUs_df = tax_file.loc[tax_file[9] != "*"]
     return(nohit_fasta_path, hit_zOTUs_df)
 
-def hierarchical_classification(nohit_zOTUs, db, output, threads):    
+def hierarchical_classification(nohit_zOTUs, db, output, threads, conda):    
     print("##### Hierarchical Vsearch Classification #####")
     output = os.path.splitext(output)[0] + ".hierarchical.txt"
     cmd = f"vsearch --sintax {nohit_zOTUs} -db {db} -tabbedout {output} -threads {threads}"
     conda_path = subprocess.check_output("conda info | grep 'base environment'", shell=True).decode("utf8").replace("base environment : ", "").replace("(read only)" , "").strip()
     conda_act_path = conda_path + "/etc/profile.d/conda.sh"
-    subprocess.run(f". {conda_act_path} && conda activate mb_vsearch && {cmd} && conda deactivate", shell=True)
+    subprocess.run(f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate", shell=True)
     
 def format_direct_classification(hits_df):
     form_df = hits_df.loc[:, 8:9]
@@ -140,19 +142,19 @@ def main():
     threads = args.threads
     h_db = args.hierarchical_db
     keep_results = args.keep_results
-
+    conda_path = sys.exec_prefix
     count = 0
     nohit_path = zOTUs
     for db in db_lst:
         count += 1
-        direct_classification(nohit_path, db, threshold, output, str(threads), str(count))
+        direct_classification(nohit_path, db, threshold, output, str(threads), str(count), conda_path)
         nohit_path, hit_zOTUs = read_dir_classification(nohit_path, output, str(count))
         if count == 1:
             hits_df = hit_zOTUs
         else:
             hits_df = hits_df.append(hit_zOTUs)
         hits_df.to_csv(os.path.splitext(output)[0] + ".direct.full.txt", sep = "\t", header = None, index=None)
-    hierarchical_classification(nohit_path, h_db , output, threads)
+    hierarchical_classification(nohit_path, h_db , output, threads, conda_path)
     formatted_direct_classification = format_direct_classification(hits_df)
     formatted_hierarchical_classification = format_hierarchical_classification(output, threshold)
     taxonomy_df = formatted_direct_classification.append(formatted_hierarchical_classification, ignore_index = True)

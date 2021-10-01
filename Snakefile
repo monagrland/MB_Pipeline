@@ -252,10 +252,7 @@ rule taxonomy:
 	conda:
 		os.path.join(workflow.basedir, "envs/mb_taxonomy.yaml")
 	shell:
-		"""
-		python3 scripts/test.py
-		python3 scripts/multilvl_taxonomic_classification.py -d {params.direct_db_lst} -z {input.zOTUs} -t {params.threshold} -o {output.base} -n {threads} -p {params.hierarchical_db} -k {params.keep_results}
-		"""
+		"python3 scripts/multilvl_taxonomic_classification.py -d {params.direct_db_lst} -z {input.zOTUs} -t {params.threshold} -o {output.base} -n {threads} -p {params.hierarchical_db} -k {params.keep_results}"
 
 
 rule krona:

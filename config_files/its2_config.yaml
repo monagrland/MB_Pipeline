@@ -27,8 +27,8 @@ output: "/home/krueger_l/Dokumente/Metabarcoding/ITS2_results_multilvl_98"
 11_direct_dbs:
   - "/mnt/data/databases/wuerzburg_de_its2_sintax.fasta"
   - "/mnt/data/databases/wuerzburg_eu_its2_sintax.fasta"
-11_hierarchical_db: "wuerzburg_full_its2_sintax.fasta"
-11_threshold: "0.98"
+11_hierarchical_db: "/mnt/data/databases/wuerzburg_full_its2_sintax.fasta"
+11_threshold: "0.5"
 threads: 8
 mqc_report: false
 taxonomy: true

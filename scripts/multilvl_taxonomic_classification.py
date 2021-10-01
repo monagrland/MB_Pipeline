@@ -33,8 +33,8 @@ def direct_classification(zOTUs, db, threshold, output, threads, run_nr, conda):
     conda_path = subprocess.check_output("conda info | grep 'base environment'", shell=True).decode("utf8").replace("base environment : ", "").replace("(read only)" , "").strip()
     conda_act_path = conda_path + "/etc/profile.d/conda.sh"
     subprocess.run(f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate", shell = True)
+    print(f"##### Finished Direct Vsearch Classification level {run_nr} #####")
 
-    
 def read_dir_classification(zOTUs_path, output, run_nr):
     tax_file = pd.read_csv(f"{os.path.splitext(output)[0]}.{run_nr}.direct.txt", sep = "\t", header = None)
     nohit_zOTU_lst = tax_file.loc[tax_file[9] == "*", 8].tolist()
@@ -54,6 +54,7 @@ def hierarchical_classification(nohit_zOTUs, db, output, threads, conda):
     conda_path = subprocess.check_output("conda info | grep 'base environment'", shell=True).decode("utf8").replace("base environment : ", "").replace("(read only)" , "").strip()
     conda_act_path = conda_path + "/etc/profile.d/conda.sh"
     subprocess.run(f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate", shell=True)
+    print("##### Finished Hierarchical Vsearch Classification #####")
     
 def format_direct_classification(hits_df):
     form_df = hits_df.loc[:, 8:9]
@@ -64,7 +65,7 @@ def format_direct_classification(hits_df):
     form_df.drop(9, axis = 1, inplace = True)
     form_df.loc[:,9] = edited_tax_lst
     ranks_lst = ["Kingdom","Phylum", "Class","Order","Family","Genus","Species"]
-    form_df[ranks_lst] = form_df[9].str.split(",", expand=True)
+    form_df[ranks_lst] = form_df.loc[:, 9].str.split(",", expand=True)
     form_df = form_df.drop([9], axis = 1)
     form_df = form_df.rename({8:"OTU"}, axis = "columns")
     edited_species_lst = []
@@ -93,7 +94,10 @@ def format_hierarchical_classification(output, threshold):
     for entry in first_col.tolist():
         split = entry.split()
         otu_name_lst.append(split[0])
-        domain_lst.append(split[1])
+        if len(split) > 1:    
+            domain_lst.append(split[1])
+        else:
+            domain_lst.append("")
 
     tax_df.index = otu_name_lst
     tax_df[0] = domain_lst
@@ -102,36 +106,42 @@ def format_hierarchical_classification(output, threshold):
     
     species_lst = []
     for j in last_row.tolist():
-        species_lst.append(j.split()[0])
+        if len(j) >= 1:
+            species_lst.append(j.split()[0])
+        else:
+            species_lst.append("")
     
     tax_df[6] = species_lst
     tax_df = tax_df.iloc[:,:7]
-    
     names_lst = []
     values_lst = []
     for i,r in tax_df.iterrows():
         names = []
         values = []
         for entry in r.tolist():
-            split = (entry.rsplit("("),1)[0]
-            names.append(split[0])
-            values.append(split[1].replace(")",""))
+            if len(entry) > 0:
+                split = entry.rsplit("(", 1)
+                names.append(split[0])
+                values.append(split[1].replace(")" , ""))
+            else:
+                split = ""
+                names.append(split)
+                values.append(0.00)
+
         names_lst.append(names)
         values_lst.append(values)
-        
     for i, row in enumerate(values_lst):
         for j, value in enumerate(row):
             if float(value) <= float(threshold):
                 names_lst[i][j] = ""
+            else:
+                names_lst[i][j] == ""
     
     names_df = pd.DataFrame(names_lst)
-    ranks_lst = ["Kingdom","Phylum", "Class","Order","Family","Genus","Species"]
-    names_df.columns = ranks_lst
+    names_df.columns = ["Kingdom","Phylum", "Class","Order","Family","Genus","Species"]
     names_df.insert(0, "OTU", otu_name_lst)
     names_df["Kingdom"] = names_df.loc[:, "Kingdom"].str.replace("d:", "k:")
     return(names_df)
-    
-    
     
 def main():
     args = arg()
@@ -155,9 +165,12 @@ def main():
             hits_df = hits_df.append(hit_zOTUs)
         hits_df.to_csv(os.path.splitext(output)[0] + ".direct.full.txt", sep = "\t", header = None, index=None)
     hierarchical_classification(nohit_path, h_db , output, threads, conda_path)
-    formatted_direct_classification = format_direct_classification(hits_df)
     formatted_hierarchical_classification = format_hierarchical_classification(output, threshold)
-    taxonomy_df = formatted_direct_classification.append(formatted_hierarchical_classification, ignore_index = True)
+    if len(hits_df) > 0:
+        formatted_direct_classification = format_direct_classification(hits_df)
+        taxonomy_df = formatted_direct_classification.append(formatted_hierarchical_classification, ignore_index = True)
+    else:
+        taxonomy_df = formatted_hierarchical_classification
     taxonomy_df.to_csv(output, sep = "\t")
     tax_df_for_krona = taxonomy_df.drop("OTU", axis = 1)
     tax_df_for_krona.to_csv(os.path.splitext(output)[0] + ".krona.txt", sep = "\t", header = False, index = False)

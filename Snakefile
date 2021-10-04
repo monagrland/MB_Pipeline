@@ -18,54 +18,70 @@ def output_lst():
 	out_lst = [config["output"] + "/09_OTU_table/otu_table.txt"]
 	if config["mqc_report"]:
 		out_lst.append(config["output"] + "/10_report/multiqc_report.html")
-		print("Added MultiQC report to Output")
 	if config["taxonomy"]:
 		out_lst.append(config["output"] + "/11_taxonomy/krona_plot.html")
-		# out_lst.append(config["output"] + "/12_merged/otu_and_tax_merged.txt")
-		print("Added Taxonomy to Output")
+	if config["concat"]:
+		out_lst.append(config["output"] + "/05_concatenated_data/all_reads.fasta")
 	return(out_lst)
+
+def create_gzip(gz_file_name):
+	"""
+	Function to create a gzip archive with an empty file. It is necessary to
+	create empty archives because Snakemake expects the files to exist,
+	even if they are empty.
+	"""
+	unzipped_name = os.path.splitext(gz_file_name)[0]
+	os.system("touch " + unzipped_name)
+	with open(unzipped_name, "rb") as f_in:
+		with gzip.open(gz_file_name, "wb") as f_out:
+			shutil.copyfileobj(f_in, f_out)
+	os.system("rm " + unzipped_name)
 
 rule all:
 	input:
 		output_lst()
 
 
-# rule remove_short_reads:
-# 	input:
-# 		input_fw = config["directory"] + "/{prefix}_R1_{suffix}.gz",
-# 		input_rv = config["directory"] + "/{prefix}_R2_{suffix}.gz"
-# 	output:
-# 		output_fw = config["output"] + "/00_wo_short_reads/{prefix}_R1_{suffix}.gz",
-# 		output_rv = config["output"] + "/00_wo_short_reads/{prefix}_R2_{suffix}.gz"
-# 	params:
-# 		length_th = int(config["00_length_threshold"])
-# 	message:
-# 		"Removing files with less than {params} entries or where one of two files is empty"
-# 	run:
-# 		fw_lst = []
-# 		rv_lst = []
-# 		with gzip.open(input.input_fw, "rb") as f:
-# 		    for line in f:
-# 		        fw_lst.append(line)
-# 		with gzip.open(input.input_rv, "rb") as g:
-# 		    for line in g:
-# 		        rv_lst.append(line)
-# 		if len(fw_lst) > 100 and len(rv_lst) > 100:
-# 			if len(fw_lst) > 0 and len(rv_lst) > 0:
-# 				shutil.copyfile(input.input_fw, output.output_fw)
-# 				shutil.copyfile(input.input_rv, output.output_rv)
-# 			else:
-# 				print("Skipping " + input.input_fw + " and " + input.input_rv + "because at least one of the files is empty")
-# 		else:
-# 			print("Skipping " + input.input_fw + " and " + input.input_rv + "because at least one of the files has less than" + str(params.length_th) + "entries")
+rule remove_short_reads:
+	input:
+		input_fw = config["directory"] + "/{prefix}_R1_{suffix}.gz",
+		input_rv = config["directory"] + "/{prefix}_R2_{suffix}.gz"
+	output:
+		output_fw = config["output"] + "/00_sans_short_reads/{prefix}_R1_{suffix}.gz",
+		output_rv = config["output"] + "/00_sans_short_reads/{prefix}_R2_{suffix}.gz"
+	params:
+		length_th = int(config["00_length_threshold"])
+	message:
+		"Removing files with less than {params} entries or where one of two files is empty"
+	run:
+		fw_lst = []
+		rv_lst = []
+		with gzip.open(input.input_fw, "rb") as f:
+		    for line in f:
+		        fw_lst.append(line)
+		with gzip.open(input.input_rv, "rb") as g:
+		    for line in g:
+		        rv_lst.append(line)
+		if len(fw_lst) > params.length_th or len(rv_lst) > params.length_th:
+			if len(fw_lst) > 0 and len(rv_lst) > 0:
+				shutil.copyfile(input.input_fw, output.output_fw)
+				shutil.copyfile(input.input_rv, output.output_rv)
+			else:
+				create_gzip(output.output_fw)
+				create_gzip(output.output_rv)
+				print("Skipping " + os.path.basename(input.input_fw) + " and " + os.path.basename(input.input_rv) + " because at least one of the files is empty")
+		else:
+			create_gzip(output.output_fw)
+			create_gzip(output.output_rv)
+			print("Skipping " + os.path.basename(input.input_fw) + " and " + os.path.basename(input.input_rv) + " because at least one of the files has less than " + str(params.length_th) + " entries")
 
 
 
 rule cutadapt:
 	""" Rule to remove the Adapter Sequences from the reads """
 	input:
-		input_fw = config["directory"] + "/{prefix}_R1_{suffix}.gz",
-		input_rv = config["directory"] + "/{prefix}_R2_{suffix}.gz"
+		input_fw = config["output"] + "/00_sans_short_reads/{prefix}_R1_{suffix}.gz",
+		input_rv = config["output"] + "/00_sans_short_reads/{prefix}_R2_{suffix}.gz"
 	output:
 		output_fw = config["output"] + "/01_trimmed_data/{prefix}_R1_{suffix}.gz",
 		output_rv = config["output"] + "/01_trimmed_data/{prefix}_R2_{suffix}.gz"

@@ -1,9 +1,9 @@
-directory: "/home/krueger_l/Dokumente/Metabarcoding/Metabarcoding/FRANZ_processing/demux_trnL/01_RawData"
-output: "/home/krueger_l/Dokumente/Metabarcoding/trnL_results_test"
+directory: "/home/krueger_l/Dokumente/Metabarcoding/Metabarcoding/FRANZ_processing/demux_ITS2/01_RawData"
+output: "/home/krueger_l/Dokumente/Metabarcoding/ITS2_results_bcdatabaser_98"
 00_length_threshold: 100
 01_adapter_trimming_options:
-  - "-g CGAAATCGGTAGACGCTACG"
-  - "-G CCATTGAGTCTCTGCACCTATC"
+  - "-g ATGCGATACTTGGTGTGAAT"
+  - "-G GACGCTTCTCCAGACTACAAT"
   - "-O 20"
   - "--pair-adapters"
   - "--action=retain"
@@ -26,11 +26,11 @@ output: "/home/krueger_l/Dokumente/Metabarcoding/trnL_results_test"
   - "--maxaccepts 0"
   - "--maxrejects 0"
 11_direct_dbs:
-  - "/mnt/data/databases/trnl.plantae.de_complete_sintax_db.fa"
-  - "/mnt/data/databases/trnl.plantae.eu_complete_sintax_db.fa"
-11_hierarchical_db: "/mnt/data/databases/trnL_CD_nr_sintax.fasta"
+  - "/mnt/data/databases/its2.plantae.de_complete_sintax_db.fa"
+  - "/mnt/data/databases/its2.plantae.eu_complete_sintax_db.fa"
+11_hierarchical_db: "/mnt/data/databases/wuerzburg_full_its2_sintax.fasta"
 11_threshold: "0.97"
 threads: 8
-mqc_report: false
-taxonomy: false
+mqc_report: true
+taxonomy: true
 concat: true

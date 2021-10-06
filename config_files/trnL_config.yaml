@@ -31,6 +31,6 @@ output: "/home/krueger_l/Dokumente/Metabarcoding/trnL_results_test"
 11_hierarchical_db: "/mnt/data/databases/trnL_CD_nr_sintax.fasta"
 11_threshold: "0.97"
 threads: 8
-mqc_report: false
+mqc_report: true
 taxonomy: true
 concat: true

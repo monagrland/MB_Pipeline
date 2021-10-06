@@ -127,6 +127,10 @@ def format_hierarchical_classification(output, threshold):
     return(names_df)
 
 def get_tax_from_samfile(samfile_path):
+    ranks_lst = ["Kingdom","Phylum", "Class","Order","Family","Genus","Species"]
+    if os.path.getsize(samfile_path) == 0:
+        print(f"No hits in {samfile_path}.")
+        return(pd.DataFrame(columns = ["zOTU"] + ranks_lst))
     sam_df = pd.read_csv(samfile_path, sep = "\t", header = None)
     sam_df = sam_df.iloc[:, [0,2]]
     #create seperate columns out of the different taxonomic ranks
@@ -139,7 +143,6 @@ def get_tax_from_samfile(samfile_path):
         
     sam_df.drop(2, axis = 1, inplace = True) #remove taxonomy from table
     sam_df = sam_df.rename({0:"zOTU"}, axis = "columns")
-    ranks_lst = ["Kingdom","Phylum", "Class","Order","Family","Genus","Species"]
     tax_lst_of_lst = [tax_str.split(",") for tax_str in edited_tax_lst]
     sam_df[ranks_lst] = tax_lst_of_lst #add taxonomy as seperate columns
     unique_zOTU_lst = list(set(sam_df["zOTU"].tolist())) #gets the name of all zOTUs and removes duplicates

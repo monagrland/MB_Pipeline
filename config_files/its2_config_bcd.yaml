@@ -1,5 +1,5 @@
 directory: "/home/krueger_l/Dokumente/Metabarcoding/Metabarcoding/FRANZ_processing/demux_ITS2/01_RawData"
-output: "/home/krueger_l/Dokumente/Metabarcoding/ITS2_results_bcd_97"
+output: "/home/krueger_l/Dokumente/Metabarcoding/ITS2_results_test_bcd_97"
 00_length_threshold: 100
 01_adapter_trimming_options:
   - "-g ATGCGATACTTGGTGTGAAT"

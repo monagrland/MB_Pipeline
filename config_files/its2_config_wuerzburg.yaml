@@ -1,5 +1,6 @@
 directory: "/home/krueger_l/Dokumente/Metabarcoding/Metabarcoding/FRANZ_processing/demux_ITS2/01_RawData"
-output: "/home/krueger_l/Dokumente/Metabarcoding/ITS2_results_multilvl_98"
+output: "/home/krueger_l/Dokumente/Metabarcoding/ITS2_results_test_97"
+00_length_threshold: 100
 01_adapter_trimming_options:
   - "-g ATGCGATACTTGGTGTGAAT"
   - "-G GACGCTTCTCCAGACTACAAT"
@@ -28,7 +29,8 @@ output: "/home/krueger_l/Dokumente/Metabarcoding/ITS2_results_multilvl_98"
   - "/mnt/data/databases/wuerzburg_de_its2_sintax.fasta"
   - "/mnt/data/databases/wuerzburg_eu_its2_sintax.fasta"
 11_hierarchical_db: "/mnt/data/databases/wuerzburg_full_its2_sintax.fasta"
-11_threshold: "0.5"
+11_threshold: "0.97"
 threads: 8
-mqc_report: false
+mqc_report: true
 taxonomy: true
+concat: true

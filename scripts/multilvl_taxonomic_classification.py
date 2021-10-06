@@ -29,7 +29,8 @@ def arg():
 def direct_classification(zOTUs, db, threshold, output, threads, run_nr, conda):
     print(f"##### Direct Vsearch Classification level {run_nr} #####")
     output = f"{os.path.splitext(output)[0]}.{run_nr}.direct.txt"
-    cmd = f"vsearch --usearch_global {zOTUs} -db {db} --id {threshold} --uc {output} --threads {threads}"
+    output_sam = f"{os.path.splitext(output)[0]}.sam"
+    cmd = f"vsearch --usearch_global {zOTUs} -db {db} --id {threshold} --uc {output} --threads {threads} -samout {output_sam} -maxaccepts 100"
     conda_path = subprocess.check_output("conda info | grep 'base environment'", shell=True).decode("utf8").replace("base environment : ", "").replace("(read only)" , "").strip()
     conda_act_path = conda_path + "/etc/profile.d/conda.sh"
     subprocess.run(f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate", shell = True)
@@ -56,24 +57,6 @@ def hierarchical_classification(nohit_zOTUs, db, output, threads, conda):
     subprocess.run(f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate", shell=True)
     print("##### Finished Hierarchical Vsearch Classification #####")
     
-def format_direct_classification(hits_df):
-    form_df = hits_df.loc[:, 8:9]
-    tax_lst = form_df.loc[:,9].tolist()
-    edited_tax_lst = []
-    for tax in tax_lst:
-        edited_tax_lst.append(re.split(".;tax=", tax)[1])
-    form_df.drop(9, axis = 1, inplace = True)
-    form_df.loc[:,9] = edited_tax_lst
-    ranks_lst = ["Kingdom","Phylum", "Class","Order","Family","Genus","Species"]
-    form_df[ranks_lst] = form_df.loc[:, 9].str.split(",", expand=True)
-    form_df = form_df.drop([9], axis = 1)
-    form_df = form_df.rename({8:"OTU"}, axis = "columns")
-    edited_species_lst = []
-    for species in form_df["Species"].tolist():
-        edited_species_lst.append(species.replace(";", ""))
-    form_df.loc[:,"Species"] = edited_species_lst
-    return(form_df)
-
 def format_hierarchical_classification(output, threshold):
     path = os.path.splitext(output)[0] + ".hierarchical.txt"
     d = []
@@ -139,9 +122,46 @@ def format_hierarchical_classification(output, threshold):
     
     names_df = pd.DataFrame(names_lst)
     names_df.columns = ["Kingdom","Phylum", "Class","Order","Family","Genus","Species"]
-    names_df.insert(0, "OTU", otu_name_lst)
+    names_df.insert(0, "zOTU", otu_name_lst)
     names_df["Kingdom"] = names_df.loc[:, "Kingdom"].str.replace("d:", "k:")
     return(names_df)
+
+def get_tax_from_samfile(samfile_path):
+    sam_df = pd.read_csv(samfile_path, sep = "\t", header = None)
+    sam_df = sam_df.iloc[:, [0,2]]
+    #create seperate columns out of the different taxonomic ranks
+    tax_lst = sam_df.loc[:,2].tolist()
+    edited_tax_lst = []
+    for tax in tax_lst:
+        tax_string = re.split(".;tax=", tax)[1] #removes the identifier at the start of the taxonomy values
+        tax_string = tax_string.removesuffix(";")
+        edited_tax_lst.append(tax_string) 
+        
+    sam_df.drop(2, axis = 1, inplace = True) #remove taxonomy from table
+    sam_df = sam_df.rename({0:"zOTU"}, axis = "columns")
+    ranks_lst = ["Kingdom","Phylum", "Class","Order","Family","Genus","Species"]
+    tax_lst_of_lst = [tax_str.split(",") for tax_str in edited_tax_lst]
+    sam_df[ranks_lst] = tax_lst_of_lst #add taxonomy as seperate columns
+    unique_zOTU_lst = list(set(sam_df["zOTU"].tolist())) #gets the name of all zOTUs and removes duplicates
+    
+    taxonomy_lst_of_lst = []
+    for zOTU in unique_zOTU_lst:
+        zOTU_df = (sam_df[sam_df.loc[:,"zOTU"] == zOTU]) #create new dataframe for every zOTU
+        if len(zOTU_df) == 1:
+            tax_row = zOTU_df.iloc[0].tolist()
+            taxonomy_lst_of_lst.append(tax_row)
+        else:
+            tax_row = [zOTU]
+            for tax_rank in ranks_lst:
+                unique_tax_set = set(zOTU_df.loc[:, tax_rank]) #removes duplicates from column
+                if len(unique_tax_set) == 1:
+                    tax_row.append(list(unique_tax_set)[0])
+                else:
+                    tax_row.append("")
+            taxonomy_lst_of_lst.append(tax_row)
+    cleaned_taxonomy_table = pd.DataFrame(taxonomy_lst_of_lst, columns = (["zOTU"] + ranks_lst))
+    return(cleaned_taxonomy_table)
+    
     
 def main():
     args = arg()
@@ -158,26 +178,31 @@ def main():
     for db in db_lst:
         count += 1
         direct_classification(nohit_path, db, threshold, output, str(threads), str(count), conda_path)
+        samfile_path = f"{os.path.splitext(output)[0]}.{count}.direct.sam"
+        tax_from_samfile_df = get_tax_from_samfile(samfile_path)
         nohit_path, hit_zOTUs = read_dir_classification(nohit_path, output, str(count))
         if count == 1:
+            taxonomy_sans_multihits = tax_from_samfile_df
             hits_df = hit_zOTUs
         else:
+            taxonomy_sans_multihits = taxonomy_sans_multihits.append(tax_from_samfile_df)
             hits_df = hits_df.append(hit_zOTUs)
         hits_df.to_csv(os.path.splitext(output)[0] + ".direct.full.txt", sep = "\t", header = None, index=None)
     hierarchical_classification(nohit_path, h_db , output, threads, conda_path)
     formatted_hierarchical_classification = format_hierarchical_classification(output, threshold)
     if len(hits_df) > 0:
-        formatted_direct_classification = format_direct_classification(hits_df)
+        formatted_direct_classification = taxonomy_sans_multihits
         taxonomy_df = formatted_direct_classification.append(formatted_hierarchical_classification, ignore_index = True)
     else:
         taxonomy_df = formatted_hierarchical_classification
     taxonomy_df.to_csv(output, sep = "\t")
-    tax_df_for_krona = taxonomy_df.drop("OTU", axis = 1)
+    tax_df_for_krona = taxonomy_df.drop(["zOTU"], axis = 1)
     tax_df_for_krona.to_csv(os.path.splitext(output)[0] + ".krona.txt", sep = "\t", header = False, index = False)
     
     if not keep_results:
         subprocess.run("rm *.direct.*", shell=True)
         subprocess.run("rm *.hierarchical.*", shell=True)
         subprocess.run("rm *_nohit_*", shell=True)
-    
+        subprocess.run("rm *.sam", shell=True)
+
 main()

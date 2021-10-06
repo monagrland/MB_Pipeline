@@ -32,5 +32,5 @@ output: "/home/krueger_l/Dokumente/Metabarcoding/trnL_results_test"
 11_threshold: "0.97"
 threads: 8
 mqc_report: false
-taxonomy: false
+taxonomy: true
 concat: true

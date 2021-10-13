@@ -24,13 +24,14 @@ def arg():
     parser.add_argument("-n", "--threads", default = 1, help = "Number of threads to be used")
     parser.add_argument("-p", "--hierarchical_db", help = "Path for the database for the hierarchical classification")
     parser.add_argument("-k", "--keep_results", help = "Keep Intermediate results of the different levels of taxonomic classification or not. Accepts 'True' and 'False'", type = bool, default = False)
+    parser.add_argument("-l", "--log", help = "Path to Logfile", required = False)
     return(parser.parse_args())
 
-def direct_classification(zOTUs, db, threshold, output, threads, run_nr, conda):
+def direct_classification(zOTUs, db, threshold, output, threads, run_nr, conda, log):
     print(f"##### Direct Vsearch Classification level {run_nr} #####")
     output = f"{os.path.splitext(output)[0]}.{run_nr}.direct.txt"
     output_sam = f"{os.path.splitext(output)[0]}.sam"
-    cmd = f"vsearch --usearch_global {zOTUs} -db {db} --id {threshold} --uc {output} --threads {threads} -samout {output_sam} -maxaccepts 100"
+    cmd = f"vsearch --usearch_global {zOTUs} -db {db} --id {threshold} --uc {output} --threads {threads} -samout {output_sam} -maxaccepts 100 2>> {log}"
     conda_path = subprocess.check_output("conda info | grep 'base environment'", shell=True).decode("utf8").replace("base environment : ", "").replace("(read only)" , "").strip()
     conda_act_path = conda_path + "/etc/profile.d/conda.sh"
     subprocess.run(f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate", shell = True)
@@ -48,10 +49,10 @@ def read_dir_classification(zOTUs_path, output, run_nr):
     hit_zOTUs_df = tax_file.loc[tax_file[9] != "*"]
     return(nohit_fasta_path, hit_zOTUs_df)
 
-def hierarchical_classification(nohit_zOTUs, db, output, threads, conda):    
+def hierarchical_classification(nohit_zOTUs, db, output, threads, conda, log):    
     print("##### Hierarchical Vsearch Classification #####")
     output = os.path.splitext(output)[0] + ".hierarchical.txt"
-    cmd = f"vsearch --sintax {nohit_zOTUs} -db {db} -tabbedout {output} -threads {threads}"
+    cmd = f"vsearch --sintax {nohit_zOTUs} -db {db} -tabbedout {output} -threads {threads} 2>> {log}"
     conda_path = subprocess.check_output("conda info | grep 'base environment'", shell=True).decode("utf8").replace("base environment : ", "").replace("(read only)" , "").strip()
     conda_act_path = conda_path + "/etc/profile.d/conda.sh"
     subprocess.run(f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate", shell=True)
@@ -165,6 +166,46 @@ def get_tax_from_samfile(samfile_path):
     cleaned_taxonomy_table = pd.DataFrame(taxonomy_lst_of_lst, columns = (["zOTU"] + ranks_lst))
     return(cleaned_taxonomy_table)
     
+def statistics(log, stats_table_path):
+    with open(log) as f:
+        logfile = f.readlines()
+    direct_matches_lines = []
+    database_lst = []
+    
+    for line in logfile:
+        if line.startswith("Matching"):
+            direct_matches_lines.append(line)
+        elif line.startswith("Classified"):
+            hierarchical_matches_line = line
+        elif line.startswith("Reading file"):
+            database_lst.append(os.path.basename(line.split()[2]))
+    
+    number_of_hits_lst = []
+    for i, line_str in enumerate(direct_matches_lines):
+        integers_from_line = [int(x) for x in line_str.split() if x.isnumeric()]
+        number_of_hits_lst.append(integers_from_line[0])
+        if i == 0:
+            number_of_sequences = integers_from_line[1]
+    integers_from_line_hierarchical = [int(x) for x in hierarchical_matches_line.split() if x.isnumeric()]
+    
+    classification_type_lst = []
+    for i in range(len(number_of_hits_lst)):
+        classification_type_lst.append(f"Direct #{i+1}")
+    classification_type_lst.append("Hierarchical")
+    number_of_hits_lst.append(integers_from_line_hierarchical[0])
+    overall_percentage_lst = [f"{round((num_hits/number_of_sequences)*100, 2)}%" for num_hits in number_of_hits_lst]
+    sequences_left_lst = []
+    num_seq = number_of_sequences
+    for num_hits in number_of_hits_lst:
+        sequences_left_lst.append(num_seq)
+        num_seq = num_seq - num_hits
+    relative_percentage_lst = []
+    for j in range(len(number_of_hits_lst)):
+        relative_percentage_lst.append(f"{round((number_of_hits_lst[j]/sequences_left_lst[j])*100, 2)}%")
+    
+    stat_dict = {"Classification Type": classification_type_lst,"Database": database_lst, "Number of hits": number_of_hits_lst, "Out of": sequences_left_lst, "Relative Percentage": relative_percentage_lst, "Overall Percentage": overall_percentage_lst}
+    stat_df = pd.DataFrame(stat_dict)
+    stat_df.to_csv(stats_table_path, sep = "\t")
     
 def main():
     args = arg()
@@ -175,12 +216,14 @@ def main():
     threads = args.threads
     h_db = args.hierarchical_db
     keep_results = args.keep_results
+    logfile = args.log if args.log != None else f"{os.path.splitext(output)[0]}.log"
     conda_path = sys.exec_prefix
+
     count = 0
     nohit_path = zOTUs
     for db in db_lst:
         count += 1
-        direct_classification(nohit_path, db, threshold, output, str(threads), str(count), conda_path)
+        direct_classification(nohit_path, db, threshold, output, str(threads), str(count), conda_path, logfile)
         samfile_path = f"{os.path.splitext(output)[0]}.{count}.direct.sam"
         tax_from_samfile_df = get_tax_from_samfile(samfile_path)
         nohit_path, hit_zOTUs = read_dir_classification(nohit_path, output, str(count))
@@ -191,7 +234,7 @@ def main():
             taxonomy_sans_multihits = taxonomy_sans_multihits.append(tax_from_samfile_df)
             hits_df = hits_df.append(hit_zOTUs)
         hits_df.to_csv(os.path.splitext(output)[0] + ".direct.full.txt", sep = "\t", header = None, index=None)
-    hierarchical_classification(nohit_path, h_db , output, threads, conda_path)
+    hierarchical_classification(nohit_path, h_db , output, threads, conda_path, logfile)
     formatted_hierarchical_classification = format_hierarchical_classification(output, threshold)
     if len(hits_df) > 0:
         formatted_direct_classification = taxonomy_sans_multihits
@@ -202,10 +245,13 @@ def main():
     tax_df_for_krona = taxonomy_df.drop(["zOTU"], axis = 1)
     tax_df_for_krona.to_csv(os.path.splitext(output)[0] + ".krona.txt", sep = "\t", header = False, index = False)
     
+    statistics_file_path = f"{os.path.dirname(output)}/stats.csv"
+    statistics(logfile, statistics_file_path)
+    
     if not keep_results:
-        subprocess.run("rm *.direct.*", shell=True)
-        subprocess.run("rm *.hierarchical.*", shell=True)
-        subprocess.run("rm *_nohit_*", shell=True)
-        subprocess.run("rm *.sam", shell=True)
-
+        out_directory = os.path.dirname(output)
+        subprocess.run(f"rm {out_directory}/*.direct.*", shell=True)
+        subprocess.run(f"rm {out_directory}/*.hierarchical.*", shell=True)
+        subprocess.run(f"rm {out_directory}/*_nohit_*", shell=True)
+    
 main()

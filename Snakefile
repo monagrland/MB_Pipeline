@@ -267,8 +267,10 @@ rule taxonomy:
 		"Starting Multilevel Taxonomic Classification"
 	conda:
 		os.path.join(workflow.basedir, "envs/mb_taxonomy.yaml")
+	log:
+		config["output"] + "/logs/11_taxonomy/taxonomy.log"
 	shell:
-		"python3 scripts/multilvl_taxonomic_classification.py -d {params.direct_db_lst} -z {input.zOTUs} -t {params.threshold} -o {output.base} -n {threads} -p {params.hierarchical_db} -k {params.keep_results}"
+		"python3 scripts/multilvl_taxonomic_classification.py -d {params.direct_db_lst} -z {input.zOTUs} -t {params.threshold} -o {output.base} -n {threads} -p {params.hierarchical_db} -k {params.keep_results} -l {log}"
 
 
 rule krona:

@@ -217,7 +217,7 @@ rule remove_chimeras:
 
 rule generate_OTU_table:
 	input:
-		search = config["output"] + "/06_derep_data/unique_reads.fasta",
+		search = config["output"] + "/05_concatenated_data/all_reads.fasta",
 		db = config["output"] + "/08_zOTUs_nonchimeras/zOTUs_nonchimeras.fasta"
 	output:
 		otu_table = config["output"] + "/09_OTU_table/otu_table.txt",

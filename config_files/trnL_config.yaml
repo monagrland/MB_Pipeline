@@ -1,12 +1,12 @@
 directory: "/home/krueger_l/Dokumente/Metabarcoding/Metabarcoding/FRANZ_processing/demux_trnL/01_RawData"
-output: "/home/krueger_l/Dokumente/Metabarcoding/trnL_results_test"
+output: "/home/krueger_l/Dokumente/Metabarcoding/trnL_results_test_2"
 00_length_threshold: 100
 01_adapter_trimming_options:
   - "-g CGAAATCGGTAGACGCTACG"
   - "-G CCATTGAGTCTCTGCACCTATC"
   - "-O 20"
   - "--pair-adapters"
-  - "--action=retain"
+  - "--action=trim"
   - "--trimmed-only"
 02_trimmomatic_options:
   - "SLIDINGWINDOW:4:12"

@@ -15,7 +15,7 @@ def output_lst():
 	Especially used during debugging or when you dont want specific output files
 	like the MultiQC report or the krona plot
 	"""
-	out_lst = [config["output"] + "/09_OTU_table/otu_table.txt"]
+	out_lst = [config["output"] + "/12_merged/otu_and_tax_merged.txt"]
 	if config["mqc_report"]:
 		out_lst.append(config["output"] + "/10_report/multiqc_report.html")
 	if config["taxonomy"]:
@@ -272,7 +272,6 @@ rule taxonomy:
 	shell:
 		"python3 scripts/multilvl_taxonomic_classification.py -d {params.direct_db_lst} -z {input.zOTUs} -t {params.threshold} -o {output.base} -n {threads} -p {params.hierarchical_db} -k {params.keep_results} -l {log}"
 
-
 rule krona:
 	input:
 		config["output"] + "/11_taxonomy/taxonomy.krona.txt"
@@ -284,3 +283,17 @@ rule krona:
 		"Creating Krona Plot"
 	shell:
 		"ktImportText -q {input} -o {output}"
+
+rule merge_tables:
+	input:
+		otu_table = config["output"] + "/09_OTU_table/otu_table.txt",
+		tax_table = config["output"] + "/11_taxonomy/taxonomy.txt"
+	output:
+		merged_table = config["output"] + "/12_merged/otu_and_tax_merged.txt"
+	message:
+		"Merging OTU and Taxonomy Tables"
+	run:
+		otu_table = pd.read_csv(input.otu_table, sep='\t', index_col = 0)
+		tax_table = pd.read_csv(input.tax_table, sep = '\t', index_col = 1).iloc[:,1:]
+		merged_table = pd.merge(otu_table, tax_table, left_index=True, right_index=True)
+		merged_table.to_csv(output.merged_table, sep='\t')

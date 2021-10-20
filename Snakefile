@@ -15,7 +15,7 @@ def output_lst():
 	Especially used during debugging or when you dont want specific output files
 	like the MultiQC report or the krona plot
 	"""
-	out_lst = [config["output"] + "/12_merged/otu_and_tax_merged.txt"]
+	out_lst = [config["output"] + "/12_merged/community_and_tax_merged.txt"]
 	if config["mqc_report"]:
 		out_lst.append(config["output"] + "/10_report/multiqc_report.html")
 	if config["taxonomy"]:
@@ -187,54 +187,54 @@ rule dereplicate_2:
 	shell:
 		"vsearch --derep_fulllength {input} --output {output} --sizein --sizeout &>> {log}"
 
-rule generate_zOTUs:
+rule generate_ASVs:
 	input:
 		config["output"] + "/06_derep_data/unique_reads.fasta"
 	output:
-		config["output"] + "/07_zOTUs/zOTUs.fasta"
+		config["output"] + "/07_ASVs/ASVs.fasta"
 	conda:
 		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
 	message:
-		"Generating zOTUs"
+		"Generating ASVs"
 	log:
-		config["output"] + "/logs/07_zOTUs/all_reads.txt"
+		config["output"] + "/logs/07_ASVs/all_reads.txt"
 	shell:
-		"vsearch --cluster_unoise {input} --centroids {output} --relabel zOTU --sizein --sizeout &>>{log}"
+		"vsearch --cluster_unoise {input} --centroids {output} --relabel z --sizein --sizeout &>>{log}"
 
 rule remove_chimeras:
 	input:
-		config["output"] + "/07_zOTUs/zOTUs.fasta"
+		config["output"] + "/07_ASVs/ASVs.fasta"
 	output:
-		config["output"] + "/08_zOTUs_nonchimeras/zOTUs_nonchimeras.fasta"
+		config["output"] + "/08_ASVs_nonchimeras/ASVs_nonchimeras.fasta"
 	conda:
 		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
 	message:
 		"Removing Chimeras"
 	log:
-		config["output"] + "/logs/08_zOTUs_nonchimeras/all_reads.txt"
+		config["output"] + "/logs/08_ASVs_nonchimeras/all_reads.txt"
 	shell:
 		"vsearch -uchime3_denovo {input} --nonchimeras {output} --sizein --xsize &>> {log}"
 
-rule generate_OTU_table:
+rule generate_community_table:
 	input:
 		search = config["output"] + "/05_concatenated_data/all_reads.fasta",
-		db = config["output"] + "/08_zOTUs_nonchimeras/zOTUs_nonchimeras.fasta"
+		db = config["output"] + "/08_ASVs_nonchimeras/ASVs_nonchimeras.fasta"
 	output:
-		otu_table = config["output"] + "/09_OTU_table/otu_table.txt",
+		community_table = config["output"] + "/09_community_table/community_table.txt",
 	params:
-		options = " ".join(config["09_otu_table_options"]),
+		options = " ".join(config["09_community_table_options"]),
 	conda:
 		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
 	message:
-		"Generating OTU table"
+		"Generating community table"
 	log:
-		config["output"] + "/logs/09_OTU_table/all_reads.txt"
+		config["output"] + "/logs/09_community_table/all_reads.txt"
 	shell:
-		"vsearch --usearch_global {input.search} --db {input.db} {params.options} --otutabout {output.otu_table} &>> {log}"
+		"vsearch --usearch_global {input.search} --db {input.db} {params.options} --otutabout {output.community_table} &>> {log}"
 
 rule generate_report:
 	input:
-		otu_table = config["output"] + "/09_OTU_table/otu_table.txt",
+		community_table = config["output"] + "/09_community_table/community_table.txt",
 		custom_mqc_config = "multiqc_config.yaml"
 	output:
 		config["output"] + "/10_report/multiqc_report.html"
@@ -252,7 +252,7 @@ rule generate_report:
 
 rule taxonomy:
 	input:
-		zOTUs = config["output"] + "/08_zOTUs_nonchimeras/zOTUs_nonchimeras.fasta"
+		ASVs = config["output"] + "/08_ASVs_nonchimeras/ASVs_nonchimeras.fasta"
 	output:
 		base = config["output"] + "/11_taxonomy/taxonomy.txt",
 		plot = config["output"] + "/11_taxonomy/taxonomy.krona.txt"
@@ -270,7 +270,7 @@ rule taxonomy:
 	log:
 		config["output"] + "/logs/11_taxonomy/taxonomy.log"
 	shell:
-		"python3 scripts/multilvl_taxonomic_classification.py -d {params.direct_db_lst} -z {input.zOTUs} -t {params.threshold} -o {output.base} -n {threads} -p {params.hierarchical_db} -k {params.keep_results} -l {log}"
+		"python3 scripts/multilvl_taxonomic_classification.py -d {params.direct_db_lst} -z {input.ASVs} -t {params.threshold} -o {output.base} -n {threads} -p {params.hierarchical_db} -k {params.keep_results} -l {log}"
 
 rule krona:
 	input:
@@ -286,14 +286,14 @@ rule krona:
 
 rule merge_tables:
 	input:
-		otu_table = config["output"] + "/09_OTU_table/otu_table.txt",
+		community_table = config["output"] + "/09_community_table/community_table.txt",
 		tax_table = config["output"] + "/11_taxonomy/taxonomy.txt"
 	output:
-		merged_table = config["output"] + "/12_merged/otu_and_tax_merged.txt"
+		merged_table = config["output"] + "/12_merged/community_and_tax_merged.txt"
 	message:
-		"Merging OTU and Taxonomy Tables"
+		"Merging community and taxonomy Tables"
 	run:
-		otu_table = pd.read_csv(input.otu_table, sep='\t', index_col = 0)
+		community_table = pd.read_csv(input.community_table, sep='\t', index_col = 0)
 		tax_table = pd.read_csv(input.tax_table, sep = '\t', index_col = 1).iloc[:,1:]
-		merged_table = pd.merge(otu_table, tax_table, left_index=True, right_index=True)
+		merged_table = pd.merge(community_table, tax_table, left_index=True, right_index=True)
 		merged_table.to_csv(output.merged_table, sep='\t')

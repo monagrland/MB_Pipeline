@@ -19,7 +19,7 @@ output: "/home/krueger_l/Dokumente/Metabarcoding/trnL_results_test_2"
   - "--fastq_minmergelen 100"
   - "--fastq_maxmergelen 300"
   - "--fastq_maxns 1"
-09_otu_table_options:
+09_community_table_options:
   - "--id 0.97"
   - "--threads 8"
   - "--sizein"

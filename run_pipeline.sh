@@ -7,4 +7,4 @@ conda activate mb_snakemake
 echo "activated conda environment"
 snakemake --use-conda --cores 8 --conda-frontend conda --configfile $1
 ENDTIME=$(date +%s)
-echo "It took $(($ENDTIME - $STARTTIME)) seconds for this Pipeline"
+echo "It took $(($ENDTIME - $STARTTIME)) seconds to finish this run."

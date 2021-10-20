@@ -29,6 +29,32 @@ def arg():
 
 
 def direct_classification(zOTUs, db, threshold, output, threads, run_nr, conda, log):
+    """
+    Function to start the direct Classification.
+
+    Parameters
+    ----------
+    zOTUs : TYPE
+        DESCRIPTION.
+    db : str
+        path to the database
+    threshold : float
+        threshold for the direct classification, e.g. 0.97
+    output : str
+        path to the output file
+    threads : int
+        number of available threads
+    run_nr : int
+        run number, multilevel classification allows multiple direct
+        classification runs, this counter increases on every level
+    log : str
+        path to logfile
+
+    Returns
+    -------
+    None.
+
+    """
     print(f"##### Direct Vsearch Classification level {run_nr} #####")
     output = f"{os.path.splitext(output)[0]}.{run_nr}.direct.txt"
     output_sam = f"{os.path.splitext(output)[0]}.sam"
@@ -39,7 +65,29 @@ def direct_classification(zOTUs, db, threshold, output, threads, run_nr, conda, 
     print(f"##### Finished Direct Vsearch Classification level {run_nr} #####")
 
 
-def read_dir_classification(zOTUs_path, output, run_nr):
+def format_dir_classification(zOTUs_path, output, run_nr):
+    """
+    Function to format the output of the direct classification.
+
+    Parameters
+    ----------
+    zOTUs_path : str
+        path to the community table
+    output : str
+        path to the output file
+    run_nr : int
+        run number, multilevel classification allows multiple direct
+        classification runs, this counter increases on every level
+
+    Returns
+    -------
+    nohit_fasta_path : str
+        Path to the fasta file containing all not yet classified sequences,
+        used for further classifications
+    hit_zOTUs_df : pandas DataFrame
+        dataframe containing the classified ASVs and the corresponding taxonomy
+
+    """
     tax_file = pd.read_csv(f"{os.path.splitext(output)[0]}.{run_nr}.direct.txt", sep="\t", header=None)
     nohit_zOTU_lst = tax_file.loc[tax_file[9] == "*", 8].tolist()
     zOTUs_dict = SeqIO.to_dict(SeqIO.parse(open(zOTUs_path), "fasta"))
@@ -53,6 +101,28 @@ def read_dir_classification(zOTUs_path, output, run_nr):
 
 
 def hierarchical_classification(nohit_zOTUs, db, output, threads, conda, log):
+    """
+    Function to start the hierarchical classification
+
+    Parameters
+    ----------
+    nohit_zOTUs : str
+        path to ASVs that could not be classified during the multilevel
+        direct classification process
+    db : str
+        path to the database
+    output : str
+        path to the output file
+    threads : int
+        number of available threads
+    log : str
+        path to logfile
+
+    Returns
+    -------
+    None.
+
+    """
     print("##### Hierarchical Vsearch Classification #####")
     output = os.path.splitext(output)[0] + ".hierarchical.txt"
     cmd = f"vsearch --sintax {nohit_zOTUs} -db {db} -tabbedout {output} -threads {threads} 2>> {log}"
@@ -63,6 +133,26 @@ def hierarchical_classification(nohit_zOTUs, db, output, threads, conda, log):
 
 
 def format_hierarchical_classification(output, threshold):
+    """
+    Function to format the output of the hierarchical classification
+
+    Parameters
+    ----------
+    output : str
+        path to the output file
+    threshold : float
+        threshold for the hierarchical classification, e.g. 0.97
+
+    Returns
+    -------
+    names_df : pandas DataFrame
+
+
+    """
+
+    # The following part is needed to avoid an error that appears if there are
+    # empty cells in a csv.
+
     path = os.path.splitext(output)[0] + ".hierarchical.txt"
     d = []
     with open(path) as csv_file:
@@ -134,6 +224,24 @@ def format_hierarchical_classification(output, threshold):
 
 
 def get_tax_from_samfile(samfile_path):
+    """
+    Function to read the samfiles created during the classification, 
+    checks whether there was more than one hit during direct classification
+    and if yes, checks for the lowest common ancestor of all direct hits above
+    the specified threshold
+
+    Parameters
+    ----------
+    samfile_path : str
+        path to the samfile
+
+    Returns
+    -------
+    cleaned_taxonomy_table : pandas DataFrame
+        Taxonomy table with LCA instead of direct hits if more than one direct
+        hit above the threshold
+
+    """
     ranks_lst = ["Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]
     if os.path.getsize(samfile_path) == 0:
         print(f"No hits in {samfile_path}.")
@@ -174,6 +282,22 @@ def get_tax_from_samfile(samfile_path):
 
 
 def statistics(log, stats_table_path):
+    """
+    A Function to create a statistics table containing information about how
+    many ASVs could be classified in each classification step.
+
+    Parameters
+    ----------
+    log : str
+        path to logfile
+    stats_table_path : str
+        path to the output file containing a statistics table
+
+    Returns
+    -------
+    None.
+
+    """
     with open(log) as f:
         logfile = f.readlines()
     direct_matches_lines = []
@@ -234,7 +358,7 @@ def main():
         direct_classification(nohit_path, db, threshold, output, str(threads), str(count), conda_path, logfile)
         samfile_path = f"{os.path.splitext(output)[0]}.{count}.direct.sam"
         tax_from_samfile_df = get_tax_from_samfile(samfile_path)
-        nohit_path, hit_zOTUs = read_dir_classification(nohit_path, output, str(count))
+        nohit_path, hit_zOTUs = format_dir_classification(nohit_path, output, str(count))
         if count == 1:
             taxonomy_sans_multihits = tax_from_samfile_df
             hits_df = hit_zOTUs

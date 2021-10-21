@@ -1,24 +1,27 @@
 name: mb_krona
 channels:
+  - conda-forge
   - bioconda
-  - defaults
 dependencies:
-  - _libgcc_mutex=0.1=main
+  - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=1_gnu
-  - c-ares=1.17.1=h27cfd23_0
-  - ca-certificates=2021.7.5=h06a4308_1
-  - curl=7.78.0=h1ccaba5_0
-  - krb5=1.19.2=hac12032_0
+  - c-ares=1.17.2=h7f98852_0
+  - ca-certificates=2021.10.8=ha878542_0
+  - curl=7.79.1=h494985f_1
+  - krb5=1.19.2=h48eae69_2
   - krona=2.8=pl5262hdfd78af_2
-  - libcurl=7.78.0=h0b77cf5_0
-  - libedit=3.1.20210714=h7f8727e_0
-  - libev=4.33=h7b6447c_0
-  - libgcc-ng=9.3.0=h5101ec6_17
-  - libgomp=9.3.0=h5101ec6_17
-  - libnghttp2=1.41.0=hf8bcb03_2
-  - libssh2=1.9.0=h1ba5d50_1
-  - libstdcxx-ng=9.3.0=hd4cf53a_17
-  - ncurses=6.2=he6710b0_1
-  - openssl=1.1.1l=h7f8727e_0
-  - perl=5.26.2=h14c3975_0
-  - zlib=1.2.11=h7b6447c_3
+  - libcurl=7.79.1=h494985f_1
+  - libedit=3.1.20191231=he28a2e2_2
+  - libev=4.33=h516909a_1
+  - libgcc-ng=11.2.0=h1d223b6_11
+  - libgomp=11.2.0=h1d223b6_11
+  - libnghttp2=1.43.0=ha19adfc_1
+  - libssh2=1.10.0=ha35d2d1_2
+  - libstdcxx-ng=11.2.0=he4da1e4_11
+  - libzlib=1.2.11=h36c2ea0_1013
+  - ncurses=6.2=h58526e2_4
+  - openssl=3.0.0=h7f98852_1
+  - perl=5.26.2=h36c2ea0_1008
+  - tk=8.6.11=h27826a3_1
+  - zlib=1.2.11=h36c2ea0_1013
+prefix: /mnt/data/homes/krueger_l/.conda/envs/mb_krona

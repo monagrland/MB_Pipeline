@@ -2,7 +2,7 @@ name: mb_taxonomy
 channels:
   - bioconda
   - conda-forge
-  - defaults
+  - nodefaults
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=1_gnu
@@ -62,7 +62,7 @@ dependencies:
   - google-api-python-client=2.23.0=pyhd8ed1ab_0
   - google-auth=1.35.0=pyh6c4a22f_0
   - google-auth-httplib2=0.1.0=pyhd8ed1ab_0
-  - google-cloud-core=1.7.1=pyhd3eb1b0_0
+  - google-cloud-core=1.7.1=pyh6c4a22f_0
   - google-cloud-storage=1.19.0=py_0
   - google-crc32c=1.1.2=py39hb81f231_0
   - google-resumable-media=2.0.2=pyh6c4a22f_0

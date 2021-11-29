@@ -18,7 +18,7 @@ import sys
 def arg():
     parser = argparse.ArgumentParser("Multilevel direct taxonomic classification")
     parser.add_argument("-d", "--db_list", nargs="+", default=[], help="List of paths to databases for the direct taxonomic classification.")
-    parser.add_argument("-z", "--zOTUs", help="Path to zOTUs")
+    parser.add_argument("-z", "--ASVs", help="Path to ASVs")
     parser.add_argument("-t", "--threshold", help="Threshold for the direct classification with usearch_global")
     parser.add_argument("-o", "--output", help="Prefered name of the output file")
     parser.add_argument("-n", "--threads", default=1, help="Number of threads to be used")
@@ -28,13 +28,13 @@ def arg():
     return(parser.parse_args())
 
 
-def direct_classification(zOTUs, db, threshold, output, threads, run_nr, conda, log):
+def direct_classification(ASVs, db, threshold, output, threads, run_nr, conda, log):
     """
     Function to start the direct Classification.
 
     Parameters
     ----------
-    zOTUs : TYPE
+    ASVs : TYPE
         DESCRIPTION.
     db : str
         path to the database
@@ -58,20 +58,20 @@ def direct_classification(zOTUs, db, threshold, output, threads, run_nr, conda, 
     print(f"##### Direct Vsearch Classification level {run_nr} #####")
     output = f"{os.path.splitext(output)[0]}.{run_nr}.direct.txt"
     output_sam = f"{os.path.splitext(output)[0]}.sam"
-    cmd = f"vsearch --usearch_global {zOTUs} -db {db} --id {threshold} --uc {output} --threads {threads} -samout {output_sam} -maxaccepts 100 2>> {log}"
+    cmd = f"vsearch --usearch_global {ASVs} -db {db} --id {threshold} --uc {output} --threads {threads} -samout {output_sam} -maxaccepts 100 2>> {log}"
     conda_path = subprocess.check_output("conda info | grep 'base environment'", shell=True).decode("utf8").replace("base environment : ", "").replace("(read only)", "").strip()
     conda_act_path = conda_path + "/etc/profile.d/conda.sh"
     subprocess.run(f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate", shell=True)
     print(f"##### Finished Direct Vsearch Classification level {run_nr} #####")
 
 
-def format_dir_classification(zOTUs_path, output, run_nr):
+def format_dir_classification(ASVs_path, output, run_nr):
     """
     Function to format the output of the direct classification.
 
     Parameters
     ----------
-    zOTUs_path : str
+    ASVs_path : str
         path to the community table
     output : str
         path to the output file
@@ -84,29 +84,29 @@ def format_dir_classification(zOTUs_path, output, run_nr):
     nohit_fasta_path : str
         Path to the fasta file containing all not yet classified sequences,
         used for further classifications
-    hit_zOTUs_df : pandas DataFrame
+    hit_ASVs_df : pandas DataFrame
         dataframe containing the classified ASVs and the corresponding taxonomy
 
     """
     tax_file = pd.read_csv(f"{os.path.splitext(output)[0]}.{run_nr}.direct.txt", sep="\t", header=None)
-    nohit_zOTU_lst = tax_file.loc[tax_file[9] == "*", 8].tolist()
-    zOTUs_dict = SeqIO.to_dict(SeqIO.parse(open(zOTUs_path), "fasta"))
+    nohit_ASV_lst = tax_file.loc[tax_file[9] == "*", 8].tolist()
+    ASVs_dict = SeqIO.to_dict(SeqIO.parse(open(ASVs_path), "fasta"))
     fasta_lst = []
-    for zOTU in nohit_zOTU_lst:
-        fasta_lst.append(zOTUs_dict[zOTU])
-    nohit_fasta_path = f"{os.path.splitext(output)[0]}_nohit_zOTUs.fa"
+    for ASV in nohit_ASV_lst:
+        fasta_lst.append(ASVs_dict[ASV])
+    nohit_fasta_path = f"{os.path.splitext(output)[0]}_nohit_ASVs.fa"
     SeqIO.write(fasta_lst, nohit_fasta_path, "fasta")
-    hit_zOTUs_df = tax_file.loc[tax_file[9] != "*"]
-    return(nohit_fasta_path, hit_zOTUs_df)
+    hit_ASVs_df = tax_file.loc[tax_file[9] != "*"]
+    return(nohit_fasta_path, hit_ASVs_df)
 
 
-def hierarchical_classification(nohit_zOTUs, db, output, threads, conda, log):
+def hierarchical_classification(nohit_ASVs, db, output, threads, conda, log):
     """
     Function to start the hierarchical classification
 
     Parameters
     ----------
-    nohit_zOTUs : str
+    nohit_ASVs : str
         path to ASVs that could not be classified during the multilevel
         direct classification process
     db : str
@@ -125,7 +125,7 @@ def hierarchical_classification(nohit_zOTUs, db, output, threads, conda, log):
     """
     print("##### Hierarchical Vsearch Classification #####")
     output = os.path.splitext(output)[0] + ".hierarchical.txt"
-    cmd = f"vsearch --sintax {nohit_zOTUs} -db {db} -tabbedout {output} -threads {threads} 2>> {log}"
+    cmd = f"vsearch --sintax {nohit_ASVs} -db {db} -tabbedout {output} -threads {threads} 2>> {log}"
     conda_path = subprocess.check_output("conda info | grep 'base environment'", shell=True).decode("utf8").replace("base environment : ", "").replace("(read only)", "").strip()
     conda_act_path = conda_path + "/etc/profile.d/conda.sh"
     subprocess.run(f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate", shell=True)
@@ -201,7 +201,7 @@ def format_hierarchical_classification(output, threshold):
             if len(entry) > 0:
                 split = entry.rsplit("(", 1)
                 names.append(split[0])
-                values.append(split[1].replace(")", ""))
+                values.append(split[1].replace(")", "").replace("\t+", ""))
             else:
                 split = ""
                 names.append(split)
@@ -218,14 +218,14 @@ def format_hierarchical_classification(output, threshold):
 
     names_df = pd.DataFrame(names_lst)
     names_df.columns = ["Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]
-    names_df.insert(0, "zOTU", otu_name_lst)
+    names_df.insert(0, "ASV", otu_name_lst)
     names_df["Kingdom"] = names_df.loc[:, "Kingdom"].str.replace("d:", "k:")
     return(names_df)
 
 
 def get_tax_from_samfile(samfile_path):
     """
-    Function to read the samfiles created during the classification, 
+    Function to read the samfiles created during the classification,
     checks whether there was more than one hit during direct classification
     and if yes, checks for the lowest common ancestor of all direct hits above
     the specified threshold
@@ -245,7 +245,8 @@ def get_tax_from_samfile(samfile_path):
     ranks_lst = ["Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]
     if os.path.getsize(samfile_path) == 0:
         print(f"No hits in {samfile_path}.")
-        return(pd.DataFrame(columns=["zOTU"] + ranks_lst))
+        return(pd.DataFrame(columns=["ASV"] + ranks_lst))
+
     sam_df = pd.read_csv(samfile_path, sep="\t", header=None)
     sam_df = sam_df.iloc[:, [0, 2]]
     # create seperate columns out of the different taxonomic ranks
@@ -257,27 +258,56 @@ def get_tax_from_samfile(samfile_path):
         edited_tax_lst.append(tax_string)
 
     sam_df.drop(2, axis=1, inplace=True)  # remove taxonomy from table
-    sam_df = sam_df.rename({0: "zOTU"}, axis="columns")
+    sam_df = sam_df.rename({0: "ASV"}, axis="columns")
     tax_lst_of_lst = [tax_str.split(",") for tax_str in edited_tax_lst]
-    sam_df[ranks_lst] = tax_lst_of_lst  # add taxonomy as seperate columns
-    unique_zOTU_lst = list(set(sam_df["zOTU"].tolist()))  # gets the name of all zOTUs and removes duplicates
+    # The following loop is needed to account for missing taxonomic
+    tax_lst_of_lst_with_NA = []
+    for tax_lst in tax_lst_of_lst:
+        kingdom = "k:NA"
+        phylum = "p:NA"
+        clss = "c:NA"
+        order = "o:NA"
+        family = "f:NA"
+        genus = "g:NA"
+        species = "s:NA"
+        for taxon in tax_lst:
+            if taxon.startswith("k:"):
+                kingdom = taxon
+            elif taxon.startswith("p:"):
+                phylum = taxon
+            elif taxon.startswith("c:"):
+                clss = taxon
+            elif taxon.startswith("o:"):
+                order = taxon
+            elif taxon.startswith("f:"):
+                family = taxon
+            elif taxon.startswith("g:"):
+                genus = taxon
+            elif taxon.startswith("s:"):
+                species = taxon
+        taxonomy_with_NA = [kingdom, phylum, clss, order, family, genus, species]
+        tax_lst_of_lst_with_NA.append(taxonomy_with_NA)
+
+    sam_df[ranks_lst] = tax_lst_of_lst_with_NA  # add taxonomy as seperate columns
+
+    unique_ASV_lst = list(set(sam_df["ASV"].tolist()))  # gets the name of all ASVs and removes duplicates
 
     taxonomy_lst_of_lst = []
-    for zOTU in unique_zOTU_lst:
-        zOTU_df = (sam_df[sam_df.loc[:, "zOTU"] == zOTU])  # create new dataframe for every zOTU
-        if len(zOTU_df) == 1:
-            tax_row = zOTU_df.iloc[0].tolist()
+    for ASV in unique_ASV_lst:
+        ASV_df = (sam_df[sam_df.loc[:, "ASV"] == ASV])  # create new dataframe for every ASV
+        if len(ASV_df) == 1:
+            tax_row = ASV_df.iloc[0].tolist()
             taxonomy_lst_of_lst.append(tax_row)
         else:
-            tax_row = [zOTU]
+            tax_row = [ASV]
             for tax_rank in ranks_lst:
-                unique_tax_set = set(zOTU_df.loc[:, tax_rank])  # removes duplicates from column
+                unique_tax_set = set(ASV_df.loc[:, tax_rank])  # removes duplicates from column
                 if len(unique_tax_set) == 1:
                     tax_row.append(list(unique_tax_set)[0])
                 else:
                     tax_row.append("")
             taxonomy_lst_of_lst.append(tax_row)
-    cleaned_taxonomy_table = pd.DataFrame(taxonomy_lst_of_lst, columns=(["zOTU"] + ranks_lst))
+    cleaned_taxonomy_table = pd.DataFrame(taxonomy_lst_of_lst, columns=(["ASV"] + ranks_lst))
     return(cleaned_taxonomy_table)
 
 
@@ -341,7 +371,7 @@ def statistics(log, stats_table_path):
 
 def main():
     args = arg()
-    zOTUs = args.zOTUs
+    ASVs = args.ASVs
     db_lst = args.db_list
     threshold = args.threshold
     output = args.output
@@ -352,19 +382,19 @@ def main():
     conda_path = sys.exec_prefix
 
     count = 0
-    nohit_path = zOTUs
+    nohit_path = ASVs
     for db in db_lst:
         count += 1
         direct_classification(nohit_path, db, threshold, output, str(threads), str(count), conda_path, logfile)
         samfile_path = f"{os.path.splitext(output)[0]}.{count}.direct.sam"
         tax_from_samfile_df = get_tax_from_samfile(samfile_path)
-        nohit_path, hit_zOTUs = format_dir_classification(nohit_path, output, str(count))
+        nohit_path, hit_ASVs = format_dir_classification(nohit_path, output, str(count))
         if count == 1:
             taxonomy_sans_multihits = tax_from_samfile_df
-            hits_df = hit_zOTUs
+            hits_df = hit_ASVs
         else:
             taxonomy_sans_multihits = taxonomy_sans_multihits.append(tax_from_samfile_df)
-            hits_df = hits_df.append(hit_zOTUs)
+            hits_df = hits_df.append(hit_ASVs)
         hits_df.to_csv(os.path.splitext(output)[0] + ".direct.full.txt", sep="\t", header=None, index=None)
     hierarchical_classification(nohit_path, h_db, output, threads, conda_path, logfile)
     formatted_hierarchical_classification = format_hierarchical_classification(output, threshold)
@@ -374,7 +404,7 @@ def main():
     else:
         taxonomy_df = formatted_hierarchical_classification
     taxonomy_df.to_csv(output, sep="\t")
-    tax_df_for_krona = taxonomy_df.drop(["zOTU"], axis=1)
+    tax_df_for_krona = taxonomy_df.drop(["ASV"], axis=1)
     tax_df_for_krona.to_csv(os.path.splitext(output)[0] + ".krona.txt", sep="\t", header=False, index=False)
 
     statistics_file_path = f"{os.path.dirname(output)}/stats.csv"

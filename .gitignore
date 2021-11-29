@@ -1,3 +1,4 @@
 /.snakemake
 .Rhistory
 run_debug.sh
+/config_files

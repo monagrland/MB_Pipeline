@@ -23,8 +23,9 @@ def create_gzip(gz_file_name):
 
 rule all:
 	input:
+		config["output"] + "/11_report/multiqc_report.html",
 		config["output"] + "/12_taxonomy/taxonomy.txt",
-		config["output"] + "/12_taxonomy/krona_plot.html"
+		config["output"] + "/12_taxonomy/krona_plot.html",
 
 rule remove_short_reads:
 	input:

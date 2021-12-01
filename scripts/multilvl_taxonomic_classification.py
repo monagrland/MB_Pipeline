@@ -186,10 +186,9 @@ def format_hierarchical_classification(output, threshold):
     species_lst = []
     for j in last_row.tolist():
         if len(j) >= 1:
-            species_lst.append(j.split()[0])
+            species_lst.append(j.split("+")[0])
         else:
             species_lst.append("")
-
     tax_df[6] = species_lst
     tax_df = tax_df.iloc[:, :7]
     names_lst = []
@@ -201,7 +200,8 @@ def format_hierarchical_classification(output, threshold):
             if len(entry) > 0:
                 split = entry.rsplit("(", 1)
                 names.append(split[0])
-                values.append(split[1].replace(")", "").replace("\t+", ""))
+                print(split)
+                values.append(split[1].replace(")", "").replace("\t", ""))
             else:
                 split = ""
                 names.append(split)

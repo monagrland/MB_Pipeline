@@ -58,7 +58,7 @@ def direct_classification(ASVs, db, threshold, output, threads, run_nr, conda, l
     print(f"##### Direct Vsearch Classification level {run_nr} #####")
     output = f"{os.path.splitext(output)[0]}.{run_nr}.direct.txt"
     output_sam = f"{os.path.splitext(output)[0]}.sam"
-    cmd = f"vsearch --usearch_global {ASVs} -db {db} --id {threshold} --uc {output} --threads {threads} -samout {output_sam} -maxaccepts 100 2>> {log}"
+    cmd = f"vsearch --usearch_global {ASVs} -db {db} --id {threshold} --uc {output} --threads {threads} -samout {output_sam} -maxaccepts 100 --strand both 2>> {log}"
     conda_path = subprocess.check_output("conda info | grep 'base environment'", shell=True).decode("utf8").replace("base environment : ", "").replace("(read only)", "").strip()
     conda_act_path = conda_path + "/etc/profile.d/conda.sh"
     subprocess.run(f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate", shell=True)
@@ -125,7 +125,7 @@ def hierarchical_classification(nohit_ASVs, db, output, threads, conda, log):
     """
     print("##### Hierarchical Vsearch Classification #####")
     output = os.path.splitext(output)[0] + ".hierarchical.txt"
-    cmd = f"vsearch --sintax {nohit_ASVs} -db {db} -tabbedout {output} -threads {threads} 2>> {log}"
+    cmd = f"vsearch --sintax {nohit_ASVs} -db {db} -tabbedout {output} -threads {threads} -strand plus 2>> {log}"
     conda_path = subprocess.check_output("conda info | grep 'base environment'", shell=True).decode("utf8").replace("base environment : ", "").replace("(read only)", "").strip()
     conda_act_path = conda_path + "/etc/profile.d/conda.sh"
     subprocess.run(f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate", shell=True)

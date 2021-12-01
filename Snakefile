@@ -27,7 +27,7 @@ rule all:
 		config["output"] + "/12_taxonomy/taxonomy.txt",
 		config["output"] + "/12_taxonomy/krona_plot.html",
 
-rule remove_short_reads:
+rule remove_short_files:
 	input:
 		input_fw = config["directory"] + "/{prefix}_R1_{suffix}.gz",
 		input_rv = config["directory"] + "/{prefix}_R2_{suffix}.gz"
@@ -140,7 +140,7 @@ rule dereplicate:
 	log:
 		config["output"] + "/logs/05_dereplicate/{prefix}_" + os.path.splitext("{suffix}")[0] + ".txt"
 	shell:
-		"vsearch --derep_fulllength {input} --output {output} --sizeout &>> {log}"
+		"vsearch --derep_fulllength {input} --output {output} --strand plus --sizeout &>> {log}"
 
 rule concatenate:
 	""" rule to concatenate all files into one """
@@ -172,7 +172,7 @@ rule dereplicate_2:
 	shell:
 		"vsearch --derep_fulllength {input} --output {output} --sizein --sizeout &>> {log}"
 
-rule generate_ASVs:
+rule denoising:
 	input:
 		config["output"] + "/07_derep_data/unique_reads.fasta"
 	output:

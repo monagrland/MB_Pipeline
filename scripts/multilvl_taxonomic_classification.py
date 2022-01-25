@@ -20,6 +20,7 @@ def arg():
     parser.add_argument("-d", "--db_list", nargs="+", default=[], help="List of paths to databases for the direct taxonomic classification.")
     parser.add_argument("-z", "--ASVs", help="Path to ASVs")
     parser.add_argument("-t", "--threshold", help="Threshold for the direct classification with usearch_global")
+    parser.add_argument("-s", "--sintax_cutoff", help="Sintax Cutoff for the hierarchical classification")
     parser.add_argument("-o", "--output", help="Prefered name of the output file")
     parser.add_argument("-n", "--threads", default=1, help="Number of threads to be used")
     parser.add_argument("-p", "--hierarchical_db", help="Path for the database for the hierarchical classification")
@@ -200,8 +201,7 @@ def format_hierarchical_classification(output, threshold):
             if len(entry) > 0:
                 split = entry.rsplit("(", 1)
                 names.append(split[0])
-                print(split)
-                values.append(split[1].replace(")", "").replace("\t", ""))
+                values.append(split[1].replace(")", "").replace("\t", "").replace("+", ""))
             else:
                 split = ""
                 names.append(split)
@@ -291,7 +291,6 @@ def get_tax_from_samfile(samfile_path):
     sam_df[ranks_lst] = tax_lst_of_lst_with_NA  # add taxonomy as seperate columns
 
     unique_ASV_lst = list(set(sam_df["ASV"].tolist()))  # gets the name of all ASVs and removes duplicates
-
     taxonomy_lst_of_lst = []
     for ASV in unique_ASV_lst:
         ASV_df = (sam_df[sam_df.loc[:, "ASV"] == ASV])  # create new dataframe for every ASV
@@ -366,6 +365,7 @@ def statistics(log, stats_table_path):
 
     stat_dict = {"Classification Type": classification_type_lst, "Database": database_lst, "Number of hits": number_of_hits_lst, "Out of": sequences_left_lst, "Relative Percentage": relative_percentage_lst, "Overall Percentage": overall_percentage_lst}
     stat_df = pd.DataFrame(stat_dict)
+    stat_df.index.name = "Run Nr."
     stat_df.to_csv(stats_table_path, sep="\t")
 
 
@@ -374,6 +374,7 @@ def main():
     ASVs = args.ASVs
     db_lst = args.db_list
     threshold = args.threshold
+    sintax_cutoff_hierarchical = args.sintax_cutoff
     output = args.output
     threads = args.threads
     h_db = args.hierarchical_db
@@ -397,7 +398,7 @@ def main():
             hits_df = hits_df.append(hit_ASVs)
         hits_df.to_csv(os.path.splitext(output)[0] + ".direct.full.txt", sep="\t", header=None, index=None)
     hierarchical_classification(nohit_path, h_db, output, threads, conda_path, logfile)
-    formatted_hierarchical_classification = format_hierarchical_classification(output, threshold)
+    formatted_hierarchical_classification = format_hierarchical_classification(output, sintax_cutoff_hierarchical)
     if len(hits_df) > 0:
         formatted_direct_classification = taxonomy_sans_multihits
         taxonomy_df = formatted_direct_classification.append(formatted_hierarchical_classification, ignore_index=True)
@@ -407,7 +408,7 @@ def main():
     tax_df_for_krona = taxonomy_df.drop(["ASV"], axis=1)
     tax_df_for_krona.to_csv(os.path.splitext(output)[0] + ".krona.txt", sep="\t", header=False, index=False)
 
-    statistics_file_path = f"{os.path.dirname(output)}/stats.csv"
+    statistics_file_path = f"{os.path.dirname(output)}/stats_mqc.csv"
     statistics(logfile, statistics_file_path)
 
     if not keep_results:

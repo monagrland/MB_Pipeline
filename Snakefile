@@ -72,7 +72,7 @@ rule quality_filter:
 	log:
 		config["output"] + "/logs/03_quality_filtering/{prefix}_{suffix}.txt"
 	shell:
-		"vsearch --fastq_filter {input} {params.options} --fastaout {output}"
+		"vsearch --fastq_filter {input} {params.options} --fastaout {output} &>> {log}"
 
 rule dereplicate:
 	""" rule to remove duplicates """
@@ -178,12 +178,14 @@ rule taxonomy:
 		ASVs = config["output"] + "/08_ASVs_nonchimeras/ASVs_nonchimeras.fasta"
 	output:
 		base = config["output"] + "/10_taxonomy/taxonomy.txt",
-		plot = config["output"] + "/10_taxonomy/taxonomy.krona.txt"
+		plot = config["output"] + "/10_taxonomy/taxonomy.krona.txt",
+		stat_table_mqc = config["output"] + "/10_taxonomy/stats_mqc.csv"
 	params:
 		direct_db_lst = config["direct_dbs"],
 		hierarchical_db = config["hierarchical_db"],
 		threshold = config["classification_threshold"],
-		keep_results = "False"
+		keep_results = "False",
+		hierarchical_threshold = config["hierarchical_threshold"]
 	threads:
 		config["threads"]
 	message:
@@ -193,7 +195,7 @@ rule taxonomy:
 	log:
 		config["output"] + "/logs/10_taxonomy/taxonomy.log"
 	shell:
-		"python3 scripts/multilvl_taxonomic_classification.py -d {params.direct_db_lst} -z {input.ASVs} -t {params.threshold} -o {output.base} -n {threads} -p {params.hierarchical_db} -k {params.keep_results} -l {log}"
+		"python3 scripts/multilvl_taxonomic_classification.py -d {params.direct_db_lst} -z {input.ASVs} -t {params.threshold} -o {output.base} -n {threads} -p {params.hierarchical_db} -k {params.keep_results} -s {params.hierarchical_threshold} -l {log}"
 
 rule krona:
 	input:
@@ -218,14 +220,19 @@ rule merge_tables:
 	run:
 		community_table = pd.read_csv(input.community_table, sep='\t', index_col = 0)
 		tax_table = pd.read_csv(input.tax_table, sep = '\t', index_col = 1).iloc[:,1:]
+		ASV_with_size_lst = tax_table.index.tolist()
+		ASV_sans_size_lst = []
+		for ASV in ASV_with_size_lst:
+		    ASV_sans_size_lst.append(ASV.split(";")[0])
+		tax_table.index = ASV_sans_size_lst
 		merged_table = pd.merge(community_table, tax_table, left_index=True, right_index=True)
 		merged_table.to_csv(output.merged_table, sep='\t')
-
 
 rule generate_report:
 	input:
 		community_table = config["output"] + "/09_community_table/community_table.txt",
-		custom_mqc_config = "multiqc_config.yaml"
+		custom_mqc_config = "multiqc_config.yaml",
+		stat_table_mqc = config["output"] + "/10_taxonomy/stats_mqc.csv"
 	output:
 		config["output"] + "/12_report/multiqc_report.html"
 	conda:
@@ -238,4 +245,4 @@ rule generate_report:
 	log:
 		config["output"] + "/logs/12_MultiQC/multiqc.txt"
 	shell:
-		"multiqc {params.log_dir} -o {params.output_dir} --config {input.custom_mqc_config}"
+		"multiqc {params.log_dir} {input.stat_table_mqc} -o {params.output_dir} --config {input.custom_mqc_config}"

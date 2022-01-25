@@ -5,6 +5,6 @@ conda env create -n mb_snakemake --file "$PWD/envs/mb_snakemake.yaml" #creates t
 STARTTIME=$(date +%s)
 conda activate mb_snakemake
 echo "activated conda environment"
-snakemake --use-conda --cores 8 --conda-frontend conda --configfile $1
+snakemake --use-conda --cores 6 --conda-frontend conda --configfile $1
 ENDTIME=$(date +%s)
 echo "It took $(($ENDTIME - $STARTTIME)) seconds to finish this run."

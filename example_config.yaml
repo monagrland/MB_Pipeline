@@ -1,0 +1,46 @@
+directory: "/home/krueger_l/Dokumente/Metabarcoding/Metabarcoding/FRANZ_processing/demux_trnL/01_RawData"
+output: "/home/krueger_l/Dokumente/Metabarcoding/trnl_TEST"
+adapter_trimming_options:
+  - "-g CGAAATCGGTAGACGCTACG"
+  - "-G CCATTGAGTCTCTGCACCTATC"
+  - "-O 23"
+merge_options:
+  - "--fastq_allowmergestagger"
+  - "--fastq_minovlen 100"
+  - "--fastq_maxdiffs 15"
+  - "--fastq_eeout"
+filter_options:
+  - "--fastq_maxee 1.0"
+  - "--fastq_minlen 100"
+  - "--fastq_maxlen 800"
+  - "--fastq_maxns 0"
+  - "--fasta_width 0"
+derep1_options:
+  - "--strand plus"
+  - "--sizeout"
+  - "--fasta_width 0"
+derep2_options:
+  - "--sizein"
+  - "--sizeout"
+  - "--fasta_width 0"
+denoise_options:
+  - "--sizein"
+  - "--sizeout"
+  - "--fasta_width 0"
+chimera_check_options:
+  - "--sizein"
+  - "--sizeout"
+  - "--fasta_width 0"
+community_table_options:
+  - "--id 0.97"
+  - "--strand plus"
+  - "--threads 6"
+  - "--sizein"
+  - "--sizeout"
+direct_dbs:
+  - "/mnt/data/databases/bcd_trnl/trnl_viridiplantae_de.fa"
+  - "/mnt/data/databases/bcd_trnl/trnl_viridiplantae_eu.fa"
+hierarchical_db: "/mnt/data/databases/bcd_trnl/trnl_viridiplantae_all.fa"
+classification_threshold: "0.97"
+hierarchical_threshold: "0.8"
+threads: 6

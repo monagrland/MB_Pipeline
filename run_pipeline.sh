@@ -3,8 +3,10 @@
 eval "$(conda shell.bash hook)"
 conda env create -n mb_snakemake --file "$PWD/envs/mb_snakemake.yaml" #creates the conda environment if you have the correct permissions and if it doesnt exist yet.
 STARTTIME=$(date +%s)
+THREADS=($(grep "threads:" $1 | sed s/"threads: "/""/))
 conda activate mb_snakemake
-echo "activated conda environment"
-snakemake --use-conda --cores 6 --conda-frontend conda --configfile $1
+echo "Activated conda environment."
+echo "Starting the pipeline using $THREADS threads."
+snakemake --use-conda --cores $THREADS --conda-frontend conda --configfile $1
 ENDTIME=$(date +%s)
 echo "It took $(($ENDTIME - $STARTTIME)) seconds to finish this run."

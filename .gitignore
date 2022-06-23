@@ -1,4 +1,5 @@
 /.snakemake
 .Rhistory
 run_debug.sh
-config_files
+run_multiple.sh
+Dockerfile

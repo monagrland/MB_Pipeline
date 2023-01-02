@@ -42,7 +42,7 @@ rule merge:
 		input_fw = config["output"] + "/01_trimmed_data/{prefix}_R1_{suffix}.gz",
 		input_rv = config["output"] + "/01_trimmed_data/{prefix}_R2_{suffix}.gz"
 	output:
-		config["output"] + "/02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"
+		config["output"] + "/02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq"
 	params:
 		options = " ".join(config["merge_options"]),
 		filename_fw = "{prefix}_R1_{suffix}.gz",
@@ -60,7 +60,7 @@ rule merge:
 rule quality_filter:
 	""" Rule for quality filtering """
 	input:
-		config["output"] + "/02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"
+		config["output"] + "/02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq"
 	output:
 		config["output"] + "/03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"
 	params:

@@ -30,7 +30,7 @@ rule cutadapt:
 	conda:
 		os.path.join(workflow.basedir, "envs/mb_cutadapt.yaml")
 	message:
-		"Executing adaptertrimming for {params.filename_fw} and {params.filename_rv}"
+		"Executing adapter trimming for {params.filename_fw} and {params.filename_rv}"
 	log:
 		os.path.join(config["output"], "logs/01_cutadapt/{prefix}_{suffix}.txt")
 	shell:

@@ -246,4 +246,4 @@ rule generate_report:
 	log:
 		os.path.join(config["output"], "logs/12_MultiQC/multiqc.txt")
 	shell:
-		"multiqc {params.log_dir} {input.stat_table_mqc} -o {params.output_dir} --config {input.custom_mqc_config}"
+		"multiqc {params.log_dir} {input.stat_table_mqc} -o {params.output_dir} --config {input.custom_mqc_config} &> {log}"

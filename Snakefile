@@ -34,7 +34,10 @@ rule cutadapt:
 	log:
 		os.path.join(config["output"], "logs/01_cutadapt/{prefix}_{suffix}.txt")
 	shell:
-		"cutadapt {params.options} -o {output.output_fw} -p {output.output_rv} {input.input_fw} {input.input_rv} &>>  {log}"
+		"""
+		cutadapt {params.options} -o {output.output_fw} -p {output.output_rv} \
+		{input.input_fw} {input.input_rv} &>>  {log}
+		"""
 
 rule merge:
 	""" Rule to merge paired end reads to a single file"""
@@ -55,7 +58,11 @@ rule merge:
 	log:
 		os.path.join(config["output"], "logs/02_merging/{prefix}_{suffix}.txt")
 	shell:
-		"vsearch --fastq_mergepairs {input.input_fw} --reverse {input.input_rv} --fastqout {output} {params.options} --relabel {params.basename}_ --label_suffix \;sample={params.basename} &>> {log}"
+		"""
+		vsearch --fastq_mergepairs {input.input_fw} --reverse {input.input_rv} \
+		--fastqout {output} {params.options} --relabel {params.basename}_ \
+		--label_suffix \;sample={params.basename} &>> {log}
+		"""
 
 rule quality_filter:
 	""" Rule for quality filtering """
@@ -75,7 +82,7 @@ rule quality_filter:
 		"vsearch --fastq_filter {input} {params.options} --fastaout {output} &>> {log}"
 
 rule dereplicate:
-	""" rule to remove duplicates """
+	""" Rule to remove duplicates """
 	input:
 		os.path.join(config["output"], "03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
 	output:
@@ -93,9 +100,17 @@ rule dereplicate:
 		"vsearch --derep_fulllength {input} --output {output} {params.options} &>> {log}"
 
 rule concatenate:
-	""" rule to concatenate all files into one """
+	""" Rule to concatenate all files into one """
 	input:
-		expand((os.path.join(config["output"], "04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")), zip, prefix = fw_files.prefix, suffix = fw_files.suffix)
+		expand(
+			os.path.join(
+				config["output"], 
+				"04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"
+			),
+			zip, 
+			prefix = fw_files.prefix, 
+			suffix = fw_files.suffix
+		)
 	output:
 		os.path.join(config["output"], "05_concatenated_data/all_reads.fasta")
 	params:
@@ -108,7 +123,7 @@ rule concatenate:
 		"cat {params.derep_dir}*.fasta > {output}"
 
 rule dereplicate_2:
-	""" remove the duplicates inside the single file """
+	""" Remove the duplicates inside the single file """
 	input:
 		os.path.join(config["output"], "05_concatenated_data/all_reads.fasta")
 	output:
@@ -171,7 +186,10 @@ rule generate_community_table:
 	log:
 		os.path.join(config["output"], "logs/09_community_table/all_reads.txt")
 	shell:
-		"vsearch --usearch_global {input.search} --db {input.db} {params.options} --otutabout {output.community_table} &>> {log}"
+		"""
+		vsearch --usearch_global {input.search} --db {input.db} \
+		{params.options} --otutabout {output.community_table} &>> {log}
+		"""
 
 rule taxonomy:
 	input:
@@ -196,7 +214,12 @@ rule taxonomy:
 	log:
 		os.path.join(config["output"], "logs/10_taxonomy/taxonomy.log")
 	shell:
-		"python3 {params.script_path} -d {params.direct_db_lst} -z {input.ASVs} -t {params.threshold} -o {output.base} -n {threads} -p {params.hierarchical_db} -k {params.keep_results} -s {params.hierarchical_threshold} -l {log}"
+		"""
+		python3 {params.script_path} -d {params.direct_db_lst} -z {input.ASVs} \
+		-t {params.threshold} -o {output.base} -n {threads} \
+		-p {params.hierarchical_db} -k {params.keep_results} \
+		-s {params.hierarchical_threshold} -l {log}
+		"""
 
 rule krona:
 	input:
@@ -246,4 +269,7 @@ rule generate_report:
 	log:
 		os.path.join(config["output"], "logs/12_MultiQC/multiqc.txt")
 	shell:
-		"multiqc {params.log_dir} {input.stat_table_mqc} -o {params.output_dir} --config {input.custom_mqc_config} &> {log}"
+		"""
+		multiqc {params.log_dir} {input.stat_table_mqc} -o {params.output_dir} \
+		--config {input.custom_mqc_config} &> {log}
+		"""

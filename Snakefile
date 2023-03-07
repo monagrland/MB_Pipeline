@@ -28,7 +28,7 @@ rule cutadapt:
 		filename_fw = "{prefix}_R1_{suffix}.gz",
 		filename_rv = "{prefix}_R2_{suffix}.gz",
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_cutadapt.yaml")
+		"envs/mb_cutadapt.yaml"
 	message:
 		"Executing adapter trimming for {params.filename_fw} and {params.filename_rv}"
 	log:
@@ -49,7 +49,7 @@ rule merge:
 		filename_rv = "{prefix}_R2_{suffix}.gz",
 		basename = "{prefix}"
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
+		"envs/mb_vsearch.yaml"
 	message:
 		"Merging paired end reads for {params.filename_fw} and {params.filename_rv}"
 	log:
@@ -66,7 +66,7 @@ rule quality_filter:
 	params:
 		options = " ".join(config["filter_options"]),
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
+		"envs/mb_vsearch.yaml"
 	message:
 		"Executing Quality Filtering"
 	log:
@@ -84,7 +84,7 @@ rule dereplicate:
 		filename = "{prefix}_{suffix}.fasta",
 		options = " ".join(config["derep1_options"])
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
+		"envs/mb_vsearch.yaml"
 	message:
 		"Removing redundant reads for {params.filename}"
 	log:
@@ -116,7 +116,7 @@ rule dereplicate_2:
 	params:
 		options = " ".join(config["derep2_options"])
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
+		"envs/mb_vsearch.yaml"
 	message:
 		"Removing redundant reads for all reads"
 	log:
@@ -132,7 +132,7 @@ rule denoising:
 	params:
 		options = " ".join(config["denoise_options"])
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
+		"envs/mb_vsearch.yaml"
 	message:
 		"Generating ASVs"
 	log:
@@ -148,7 +148,7 @@ rule remove_chimeras:
 	params:
 		options = " ".join(config["chimera_check_options"])
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
+		"envs/mb_vsearch.yaml"
 	message:
 		"Removing Chimeras"
 	log:
@@ -165,7 +165,7 @@ rule generate_community_table:
 	params:
 		options = " ".join(config["community_table_options"]),
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
+		"envs/mb_vsearch.yaml"
 	message:
 		"Generating community table"
 	log:
@@ -185,17 +185,18 @@ rule taxonomy:
 		hierarchical_db = config["hierarchical_db"],
 		threshold = config["classification_threshold"],
 		keep_results = "False",
-		hierarchical_threshold = config["hierarchical_threshold"]
+		hierarchical_threshold = config["hierarchical_threshold"],
+		script_path = os.path.join(workflow.basedir, "scripts/multilvl_taxonomic_classification.py")
 	threads:
 		config["threads"]
 	message:
 		"Starting Multilevel Taxonomic Classification"
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_taxonomy.yaml")
+		"envs/mb_taxonomy.yaml"
 	log:
 		os.path.join(config["output"], "logs/10_taxonomy/taxonomy.log")
 	shell:
-		"python3 scripts/multilvl_taxonomic_classification.py -d {params.direct_db_lst} -z {input.ASVs} -t {params.threshold} -o {output.base} -n {threads} -p {params.hierarchical_db} -k {params.keep_results} -s {params.hierarchical_threshold} -l {log}"
+		"python3 {params.script_path} -d {params.direct_db_lst} -z {input.ASVs} -t {params.threshold} -o {output.base} -n {threads} -p {params.hierarchical_db} -k {params.keep_results} -s {params.hierarchical_threshold} -l {log}"
 
 rule krona:
 	input:
@@ -203,7 +204,7 @@ rule krona:
 	output:
 		os.path.join(config["output"], "10_taxonomy/krona_plot.html")
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_krona.yaml")
+		"envs/mb_krona.yaml"
 	message:
 		"Creating Krona Plot"
 	shell:
@@ -231,12 +232,12 @@ rule merge_tables:
 rule generate_report:
 	input:
 		community_table = os.path.join(config["output"], "09_community_table/community_table.txt"),
-		custom_mqc_config = "multiqc_config.yaml",
+		custom_mqc_config = os.path.join(workflow.basedir, "multiqc_config.yaml"),
 		stat_table_mqc = os.path.join(config["output"], "10_taxonomy/stats_mqc.csv")
 	output:
 		os.path.join(config["output"], "12_report/multiqc_report.html")
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_multiqc.yaml")
+		"envs/mb_multiqc.yaml"
 	params:
 		output_dir = os.path.join(config["output"], "12_report/"),
 		log_dir = os.path.join(config["output"], "logs")

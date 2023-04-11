@@ -3,6 +3,6 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - snakemake=6.5.3
+  - snakemake=6.4.0
   - conda=4.10.3
   - mamba=0.15.2

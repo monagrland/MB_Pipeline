@@ -29,13 +29,14 @@ rule cutadapt:
 		filename_rv = "{prefix}_R2_{suffix}.gz",
 	conda:
 		"envs/mb_cutadapt.yaml"
+	threads: 1
 	message:
 		"Executing adapter trimming for {params.filename_fw} and {params.filename_rv}"
 	log:
 		os.path.join(config["output"], "logs/01_cutadapt/{prefix}_{suffix}.txt")
 	shell:
 		"""
-		cutadapt {params.options} -o {output.output_fw} -p {output.output_rv} \
+		cutadapt --cores {threads} {params.options} -o {output.output_fw} -p {output.output_rv} \
 		{input.input_fw} {input.input_rv} &>>  {log}
 		"""
 
@@ -53,13 +54,15 @@ rule merge:
 		basename = "{prefix}"
 	conda:
 		"envs/mb_vsearch.yaml"
+	threads: 1
 	message:
 		"Merging paired end reads for {params.filename_fw} and {params.filename_rv}"
 	log:
 		os.path.join(config["output"], "logs/02_merging/{prefix}_{suffix}.txt")
 	shell:
 		"""
-		vsearch --fastq_mergepairs {input.input_fw} --reverse {input.input_rv} \
+		vsearch --threads {threads} \
+		--fastq_mergepairs {input.input_fw} --reverse {input.input_rv} \
 		--fastqout {output} {params.options} --relabel {params.basename}_ \
 		--label_suffix \;sample={params.basename} &>> {log}
 		"""
@@ -74,12 +77,13 @@ rule quality_filter:
 		options = " ".join(config["filter_options"]),
 	conda:
 		"envs/mb_vsearch.yaml"
+	threads: 1
 	message:
 		"Executing Quality Filtering"
 	log:
 		os.path.join(config["output"], "logs/03_quality_filtering/{prefix}_{suffix}.txt")
 	shell:
-		"vsearch --fastq_filter {input} {params.options} --fastaout {output} &>> {log}"
+		"vsearch --threads {threads} --fastq_filter {input} {params.options} --fastaout {output} &>> {log}"
 
 rule dereplicate:
 	""" Rule to remove duplicates """
@@ -92,12 +96,13 @@ rule dereplicate:
 		options = " ".join(config["derep1_options"])
 	conda:
 		"envs/mb_vsearch.yaml"
+	threads: 1
 	message:
 		"Removing redundant reads for {params.filename}"
 	log:
 		os.path.join(config["output"], "logs/04_dereplicate/{prefix}_" + os.path.splitext("{suffix}")[0] + ".txt")
 	shell:
-		"vsearch --derep_fulllength {input} --output {output} {params.options} &>> {log}"
+		"vsearch --threads {threads} --derep_fulllength {input} --output {output} {params.options} &>> {log}"
 
 rule concatenate:
 	""" Rule to concatenate all files into one """
@@ -132,12 +137,14 @@ rule dereplicate_2:
 		options = " ".join(config["derep2_options"])
 	conda:
 		"envs/mb_vsearch.yaml"
+	threads:
+		config["threads"]
 	message:
 		"Removing redundant reads for all reads"
 	log:
 		os.path.join(config["output"], "logs/06_dereplicate/all_reads.txt")
 	shell:
-		"vsearch --derep_fulllength {input} --output {output} {params.options} &>> {log}"
+		"vsearch --threads {threads} --derep_fulllength {input} --output {output} {params.options} &>> {log}"
 
 rule denoising:
 	input:
@@ -148,12 +155,14 @@ rule denoising:
 		options = " ".join(config["denoise_options"])
 	conda:
 		"envs/mb_vsearch.yaml"
+	threads:
+		config["threads"]
 	message:
 		"Generating ASVs"
 	log:
 		os.path.join(config["output"], "logs/07_ASVs/all_reads.txt")
 	shell:
-		"vsearch --cluster_unoise {input} --centroids {output} --relabel ASV {params.options} &>>{log}"
+		"vsearch --threads {threads} --cluster_unoise {input} --centroids {output} --relabel ASV {params.options} &>>{log}"
 
 rule remove_chimeras:
 	input:
@@ -164,12 +173,14 @@ rule remove_chimeras:
 		options = " ".join(config["chimera_check_options"])
 	conda:
 		"envs/mb_vsearch.yaml"
+	threads:
+		config["threads"]
 	message:
 		"Removing Chimeras"
 	log:
 		os.path.join(config["output"], "logs/08_ASVs_nonchimeras/all_reads.txt")
 	shell:
-		"vsearch -uchime3_denovo {input} --nonchimeras {output} {params.options} &>> {log}"
+		"vsearch --threads {threads} -uchime3_denovo {input} --nonchimeras {output} {params.options} &>> {log}"
 
 rule generate_community_table:
 	input:
@@ -181,13 +192,15 @@ rule generate_community_table:
 		options = " ".join(config["community_table_options"]),
 	conda:
 		"envs/mb_vsearch.yaml"
+	threads:
+		config["threads"]
 	message:
 		"Generating community table"
 	log:
 		os.path.join(config["output"], "logs/09_community_table/all_reads.txt")
 	shell:
 		"""
-		vsearch --usearch_global {input.search} --db {input.db} \
+		vsearch --threads {threads} --usearch_global {input.search} --db {input.db} \
 		{params.options} --otutabout {output.community_table} &>> {log}
 		"""
 

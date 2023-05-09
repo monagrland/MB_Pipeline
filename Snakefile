@@ -3,332 +3,298 @@ import json
 import pandas as pd
 import csv
 import gzip
-import shutil
+import yaml
 
 
 fw_files = glob_wildcards(config["directory"] + "/{prefix}_R1_{suffix}.gz")
 
 
-def output_lst():
-	"""
-	Function to specify the wanted output.
-	Especially used during debugging or when you dont want specific output files
-	like the MultiQC report or the krona plot
-	"""
-	out_lst = [config["output"] + "/09_OTU_table/otu_table.txt"]
-	if config["mqc_report"]:
-		out_lst.append(config["output"] + "/10_report/multiqc_report.html")
-		print("Added MultiQC report to Output")
-	if config["taxonomy"]:
-		out_lst.append(config["output"] + "/11_taxonomy/krona_plot.html")
-		out_lst.append(config["output"] + "/12_merged/otu_and_tax_merged.txt")
-		print("Added Taxonomy to Output")
-	return(out_lst)
-
 rule all:
 	input:
-		output_lst()
+		os.path.join(config["output"], "logs/config_file.yaml"),
+		os.path.join(config["output"], "12_report/multiqc_report.html"),
+		os.path.join(config["output"], "11_merged/community_and_tax_merged.txt"),
+		os.path.join(config["output"], "10_taxonomy/krona_plot.html"),
 
-#
-# rule remove_short_reads:
-# 	input:
-# 		input_fw = config["directory"] + "/{prefix}_R1_{suffix}.gz",
-# 		input_rv = config["directory"] + "/{prefix}_R2_{suffix}.gz"
-# 	output:
-# 		output_fw = config["output"] + "/00_wo_short_reads/{prefix}_R1_{suffix}.gz",
-# 		output_rv = config["output"] + "/00_wo_short_reads/{prefix}_R2_{suffix}.gz"
-# 	params:
-# 		length_th = int(config["00_length_threshold"])
-# 	message:
-# 		"Removing files with less than {params} entries or where one of two files is empty"
-# 	run:
-# 		fw_lst = []
-# 		rv_lst = []
-# 		with gzip.open(input.input_fw, "rb") as f:
-# 		    for line in f:
-# 		        fw_lst.append(line)
-# 		with gzip.open(input.input_rv, "rb") as g:
-# 		    for line in g:
-# 		        rv_lst.append(line)
-# 		if len(fw_lst) > 100 and len(rv_lst) > 100:
-# 			if len(fw_lst) > 0 and len(rv_lst) > 0:
-# 				shutil.copyfile(input.input_fw, output.output_fw)
-# 				shutil.copyfile(input.input_rv, output.output_rv)
-# 			else:
-# 				print("Skipping " + input.input_fw + " and " + input.input_rv + "because at least one of the files is empty")
-# 		else:
-# 			print("Skipping " + input.input_fw + " and " + input.input_rv + "because at least one of the files has less than" + str(params.length_th) + "entries")
-
-
+rule save_config:
+	""" Rule to save the config file in the logs directory """
+	output:
+		config_file_out = os.path.join(config["output"], "logs/config_file.yaml")
+	message:
+		"Saving config file to log directory"
+	run:
+		with open(output.config_file_out, "w") as file:
+			yaml.dump(config, file)
+	
 
 rule cutadapt:
 	""" Rule to remove the Adapter Sequences from the reads """
 	input:
-		input_fw = config["directory"] + "/{prefix}_R1_{suffix}.gz",
-		input_rv = config["directory"] + "/{prefix}_R2_{suffix}.gz"
+		input_fw = os.path.join(config["directory"], "{prefix}_R1_{suffix}.gz"),
+		input_rv = os.path.join(config["directory"], "{prefix}_R2_{suffix}.gz")
 	output:
-		output_fw = config["output"] + "/01_trimmed_data/{prefix}_R1_{suffix}.gz",
-		output_rv = config["output"] + "/01_trimmed_data/{prefix}_R2_{suffix}.gz"
+		output_fw = os.path.join(config["output"], "01_trimmed_data/{prefix}_R1_{suffix}.gz"),
+		output_rv = os.path.join(config["output"], "01_trimmed_data/{prefix}_R2_{suffix}.gz")
 	params:
-		options = " ".join(config["01_adapter_trimming_options"]),
+		options = " ".join(config["adapter_trimming_options"]),
 		filename_fw = "{prefix}_R1_{suffix}.gz",
 		filename_rv = "{prefix}_R2_{suffix}.gz",
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_cutadapt.yaml")
+		"envs/mb_cutadapt.yaml"
+	threads: 1
 	message:
-		"Executing adaptertrimming for {params.filename_fw} and {params.filename_rv}"
+		"Executing adapter trimming for {params.filename_fw} and {params.filename_rv}"
 	log:
-		config["output"] + "/logs/01_cutadapt/{prefix}_{suffix}.txt"
+		os.path.join(config["output"], "logs/01_cutadapt/{prefix}_{suffix}.txt")
 	shell:
-		"cutadapt {params.options} -o {output.output_fw} -p {output.output_rv} {input.input_fw} {input.input_rv} &>>  {log}"
-
-rule trimmomatic:
-	"""rule to filter reads"""
-	input:
-		input_fw = config["output"] + "/01_trimmed_data/{prefix}_R1_{suffix}.gz",
-		input_rv = config["output"] + "/01_trimmed_data/{prefix}_R2_{suffix}.gz"
-	output:
-		output_fw = config["output"] + "/02_filtered_data/{prefix}_R1_{suffix}.gz",
-		output_rv = config["output"] + "/02_filtered_data/{prefix}_R2_{suffix}.gz"
-	params:
-		options = " ".join(config["02_trimmomatic_options"]),
-		filename_fw = "{prefix}_R1_{suffix}.gz",
-		filename_rv = "{prefix}_R2_{suffix}.gz",
-	conda:
-		os.path.join(workflow.basedir, "envs/mb_trimmomatic.yaml")
-	message:
-		"Removing low quality reads for {params.filename_fw} and {params.filename_rv}"
-	log:
-		config["output"] + "/logs/02_trimmomatic/{prefix}_{suffix}.txt"
-	shell:
-		"trimmomatic PE {input.input_fw} {input.input_rv} {output.output_fw} /dev/null {output.output_rv} /dev/null {params.options} &>> {log}"
+		"""
+		cutadapt --cores {threads} {params.options} -o {output.output_fw} -p {output.output_rv} \
+		{input.input_fw} {input.input_rv} &>>  {log}
+		"""
 
 rule merge:
 	""" Rule to merge paired end reads to a single file"""
 	input:
-		input_fw = config["output"] + "/02_filtered_data/{prefix}_R1_{suffix}.gz",
-		input_rv = config["output"] + "/02_filtered_data/{prefix}_R2_{suffix}.gz"
+		input_fw = os.path.join(config["output"], "01_trimmed_data/{prefix}_R1_{suffix}.gz"),
+		input_rv = os.path.join(config["output"], "01_trimmed_data/{prefix}_R2_{suffix}.gz")
 	output:
-		config["output"] + "/03_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"
+		os.path.join(config["output"], "02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq")
 	params:
-		options = " ".join(config["03_vsearch_merge_options"]),
+		options = " ".join(config["merge_options"]),
 		filename_fw = "{prefix}_R1_{suffix}.gz",
 		filename_rv = "{prefix}_R2_{suffix}.gz",
 		basename = "{prefix}"
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
+		"envs/mb_vsearch.yaml"
+	threads: 1
 	message:
 		"Merging paired end reads for {params.filename_fw} and {params.filename_rv}"
 	log:
-		config["output"] + "/logs/03_merging/{prefix}_{suffix}.txt"
+		os.path.join(config["output"], "logs/02_merging/{prefix}_{suffix}.txt")
 	shell:
-		"vsearch --fastq_mergepairs {input.input_fw} --reverse {input.input_rv} --fastaout {output} {params.options} --relabel {params.basename}_ --label_suffix \;sample={params.basename} &>> {log}"
+		"""
+		vsearch --threads {threads} \
+		--fastq_mergepairs {input.input_fw} --reverse {input.input_rv} \
+		--fastqout {output} {params.options} --relabel {params.basename}_ \
+		--label_suffix \;sample={params.basename} &>> {log}
+		"""
+
+rule quality_filter:
+	""" Rule for quality filtering """
+	input:
+		os.path.join(config["output"], "02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq")
+	output:
+		os.path.join(config["output"], "03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
+	params:
+		options = " ".join(config["filter_options"]),
+	conda:
+		"envs/mb_vsearch.yaml"
+	threads: 1
+	message:
+		"Executing Quality Filtering"
+	log:
+		os.path.join(config["output"], "logs/03_quality_filtering/{prefix}_{suffix}.txt")
+	shell:
+		"vsearch --threads {threads} --fastq_filter {input} {params.options} --fastaout {output} &>> {log}"
 
 rule dereplicate:
-	""" rule to remove duplicates """
+	""" Rule to remove duplicates """
 	input:
-		config["output"] + "/03_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"
+		os.path.join(config["output"], "03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
 	output:
-		config["output"] + "/04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"
+		os.path.join(config["output"], "04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
 	params:
-		filename = "{prefix}_{suffix}.fasta"
+		filename = "{prefix}_{suffix}.fasta",
+		options = " ".join(config["derep1_options"])
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
+		"envs/mb_vsearch.yaml"
+	threads: 1
 	message:
 		"Removing redundant reads for {params.filename}"
 	log:
-		config["output"] + "/logs/04_dereplicate/{prefix}_" + os.path.splitext("{suffix}")[0] + ".txt"
+		os.path.join(config["output"], "logs/04_dereplicate/{prefix}_" + os.path.splitext("{suffix}")[0] + ".txt")
 	shell:
-		"vsearch --derep_fulllength {input} --output {output} --sizeout &>> {log}"
+		"vsearch --threads {threads} --derep_fulllength {input} --output {output} {params.options} &>> {log}"
 
 rule concatenate:
-	""" rule to concatenate all files into one """
+	""" Rule to concatenate all files into one """
 	input:
-		expand((config["output"] + "/04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"), zip, prefix = fw_files.prefix, suffix = fw_files.suffix)
+		expand(
+			os.path.join(
+				config["output"], 
+				"04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"
+			),
+			zip, 
+			prefix = fw_files.prefix, 
+			suffix = fw_files.suffix
+		)
 	output:
-		config["output"] + "/05_concatenated_data/all_reads.fasta"
+		os.path.join(config["output"], "05_concatenated_data/all_reads.fasta")
 	params:
-		derep_dir = config["output"] + "/04_derep_data/"
+		derep_dir = os.path.join(config["output"], "04_derep_data/")
 	message:
 		"Concatenating all reads"
 	log:
-		config["output"] + "/logs/05_concatenate/all_reads.txt"
+		os.path.join(config["output"], "logs/05_concatenate/all_reads.txt")
 	shell:
 		"cat {params.derep_dir}*.fasta > {output}"
 
 rule dereplicate_2:
-	""" remove the duplicates inside the single file """
+	""" Remove the duplicates inside the single file """
 	input:
-		config["output"] + "/05_concatenated_data/all_reads.fasta"
+		os.path.join(config["output"], "05_concatenated_data/all_reads.fasta")
 	output:
-		config["output"] + "/06_derep_data/unique_reads.fasta"
+		os.path.join(config["output"], "06_derep_data/unique_reads.fasta")
+	params:
+		options = " ".join(config["derep2_options"])
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
+		"envs/mb_vsearch.yaml"
+	threads:
+		config["threads"]
 	message:
 		"Removing redundant reads for all reads"
 	log:
-		config["output"] + "/logs/06_dereplicate/all_reads.txt"
+		os.path.join(config["output"], "logs/06_dereplicate/all_reads.txt")
 	shell:
-		"vsearch --derep_fulllength {input} --output {output} --sizein --sizeout &>> {log}"
+		"vsearch --threads {threads} --derep_fulllength {input} --output {output} {params.options} &>> {log}"
 
-rule generate_zOTUs:
+rule denoising:
 	input:
-		config["output"] + "/06_derep_data/unique_reads.fasta"
+		os.path.join(config["output"], "06_derep_data/unique_reads.fasta")
 	output:
-		config["output"] + "/07_zOTUs/zOTUs.fasta"
+		os.path.join(config["output"], "07_ASVs/ASVs.fasta")
+	params:
+		options = " ".join(config["denoise_options"])
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
+		"envs/mb_vsearch.yaml"
+	threads:
+		config["threads"]
 	message:
-		"Generating zOTUs"
+		"Generating ASVs"
 	log:
-		config["output"] + "/logs/07_zOTUs/all_reads.txt"
+		os.path.join(config["output"], "logs/07_ASVs/all_reads.txt")
 	shell:
-		"vsearch --cluster_unoise {input} --centroids {output} --relabel zOTU --sizein --sizeout &>>{log}"
+		"vsearch --threads {threads} --cluster_unoise {input} --centroids {output} --relabel ASV {params.options} &>>{log}"
 
 rule remove_chimeras:
 	input:
-		config["output"] + "/07_zOTUs/zOTUs.fasta"
+		os.path.join(config["output"], "07_ASVs/ASVs.fasta")
 	output:
-		config["output"] + "/08_zOTUs_nonchimeras/zOTUs_nonchimeras.fasta"
+		os.path.join(config["output"], "08_ASVs_nonchimeras/ASVs_nonchimeras.fasta")
+	params:
+		options = " ".join(config["chimera_check_options"])
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
+		"envs/mb_vsearch.yaml"
+	threads:
+		config["threads"]
 	message:
 		"Removing Chimeras"
 	log:
-		config["output"] + "/logs/08_zOTUs_nonchimeras/all_reads.txt"
+		os.path.join(config["output"], "logs/08_ASVs_nonchimeras/all_reads.txt")
 	shell:
-		"vsearch -uchime3_denovo {input} --nonchimeras {output} --sizein --xsize &>> {log}"
+		"vsearch --threads {threads} -uchime3_denovo {input} --nonchimeras {output} {params.options} &>> {log}"
 
-rule generate_OTU_table:
+rule generate_community_table:
 	input:
-		search = config["output"] + "/06_derep_data/unique_reads.fasta",
-		db = config["output"] + "/08_zOTUs_nonchimeras/zOTUs_nonchimeras.fasta"
+		search = os.path.join(config["output"], "05_concatenated_data/all_reads.fasta"),
+		db = os.path.join(config["output"], "08_ASVs_nonchimeras/ASVs_nonchimeras.fasta")
 	output:
-		config["output"] + "/09_OTU_table/otu_table.txt"
+		community_table = os.path.join(config["output"], "09_community_table/community_table.txt"),
 	params:
-		options = " ".join(config["09_otu_table_options"]),
+		options = " ".join(config["community_table_options"]),
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
+		"envs/mb_vsearch.yaml"
+	threads:
+		config["threads"]
 	message:
-		"Generating OTU table"
+		"Generating community table"
 	log:
-		config["output"] + "/logs/09_OTU_table/all_reads.txt"
+		os.path.join(config["output"], "logs/09_community_table/all_reads.txt")
 	shell:
-		"vsearch --usearch_global {input.search} --db {input.db} {params.options} --otutabout {output} &>> {log}"
-
-rule generate_report:
-	input:
-		otu_table = config["output"] + "/09_OTU_table/otu_table.txt",
-		custom_mqc_config = "multiqc_config.yaml"
-	output:
-		config["output"] + "/10_report/multiqc_report.html"
-	conda:
-		os.path.join(workflow.basedir, "envs/mb_multiqc.yaml")
-	params:
-		output_dir = config["output"] + "/10_report/",
-		log_dir = config["output"] + "/logs"
-	message:
-		"Generating MultiQC report"
-	log:
-		config["output"] + "/logs/10_MultiQC/multiqc.txt"
-	shell:
-		"multiqc {params.log_dir} -o {params.output_dir} --config {input.custom_mqc_config}"
+		"""
+		vsearch --threads {threads} --usearch_global {input.search} --db {input.db} \
+		{params.options} --otutabout {output.community_table} &>> {log}
+		"""
 
 rule taxonomy:
 	input:
-		zOTUs = config["output"] + "/08_zOTUs_nonchimeras/zOTUs_nonchimeras.fasta",
-		db = config["11_database"]
+		ASVs = os.path.join(config["output"], "08_ASVs_nonchimeras/ASVs_nonchimeras.fasta")
 	output:
-		config["output"] + "/11_taxonomy/taxonomy.txt"
+		base = os.path.join(config["output"], "10_taxonomy/taxonomy.txt"),
+		plot = os.path.join(config["output"], "10_taxonomy/taxonomy.krona.txt"),
+		stat_table_mqc = os.path.join(config["output"], "10_taxonomy/stats_mqc.csv")
+	params:
+		direct_db_lst = config["direct_dbs"],
+		hierarchical_db = config["hierarchical_db"],
+		threshold = config["classification_threshold"],
+		keep_results = "False",
+		hierarchical_threshold = config["hierarchical_threshold"],
+		script_path = os.path.join(workflow.basedir, "scripts/multilvl_taxonomic_classification.py")
+	threads:
+		config["threads"]
+	message:
+		"Starting Multilevel Taxonomic Classification"
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_vsearch.yaml")
-	message:
-		"Determining Taxonomy"
+		"envs/mb_taxonomy.yaml"
 	log:
-		config["output"] + "/logs/11_taxonomy/silva.txt"
+		os.path.join(config["output"], "logs/10_taxonomy/taxonomy.log")
 	shell:
-		"vsearch --sintax {input.zOTUs} --db {input.db} --sintax_cutoff 0.9 --tabbedout {output}"
-
-rule merge_tables:
-	input:
-		otu_table = config["output"] + "/09_OTU_table/otu_table.txt",
-		tax_table = config["output"] + "/11_taxonomy/taxonomy.txt"
-	output:
-		merged_table = config["output"] + "/12_merged/otu_and_tax_merged.txt"
-	message:
-		"Merging OTU and Taxonomy Tables"
-	run:
-		otu_table = pd.read_csv(input.otu_table,sep='\t', index_col = 0)
-		tax_table = pd.read_csv(input.tax_table,sep=r'\,|\t', engine='python', header = None, error_bad_lines=False, index_col = 0)
-		merged_table = pd.merge(otu_table, tax_table.iloc[:,:7], left_index=True, right_index=True)
-		merged_table.to_csv(output[0], sep='\t')
-
-rule prepare_taxonomy_for_krona:
-	input:
-		tax_table = config["output"] + "/11_taxonomy/taxonomy.txt"
-	output:
-		out_path = config["output"] + "/11_taxonomy/taxonomy_for_krona.txt"
-	message:
-		"Creating Taxonomy Table for Krona Plots"
-	run:
-		threshold = float(config["11_threshold"])
-		d = []
-		with open(input.tax_table) as csv_file:
-		    areader = csv.reader(csv_file)
-		    max_elems = 0
-		    for row in areader:
-		        if max_elems < len(row): max_elems = len(row)
-		    csv_file.seek(0)
-		    for i, row in enumerate(areader):
-		        d.append(row + ["" for x in range (max_elems - len(row))])
-		tax_df = pd.DataFrame(d)
-
-		first_col = tax_df.iloc[:,0]
-		otu_name_lst = []
-		domain_lst = []
-		for entry in first_col.tolist():
-		    split = entry.split()
-		    otu_name_lst.append(split[0])
-		    domain_lst.append(split[1])
-
-		tax_df.index = otu_name_lst
-		tax_df[0] = domain_lst
-		last_row = tax_df.iloc[:,6]
-		species_lst = []
-		for j in last_row.tolist():
-		    species_lst.append(j.split()[0])
-
-		tax_df[6] = species_lst
-		tax_df = tax_df.iloc[:,:7]
-
-		names_lst = []
-		values_lst = []
-		for i,r in tax_df.iterrows():
-		    names = []
-		    values = []
-		    for entry in r.tolist():
-		        split = (entry.rsplit("("),1)[0]
-		        names.append(split[0])
-		        values.append(split[1].replace(")",""))
-		    names_lst.append(names)
-		    values_lst.append(values)
-
-		for i, row in enumerate(values_lst):
-		    for j, value in enumerate(row):
-		        if float(value) <= threshold:
-		            names_lst[i][j] = ""
-
-		names_df = pd.DataFrame(names_lst)
-		names_df.to_csv(output.out_path, sep = "\t", index=False, header=False)
+		"""
+		python3 {params.script_path} -d {params.direct_db_lst} -z {input.ASVs} \
+		-t {params.threshold} -o {output.base} -n {threads} \
+		-p {params.hierarchical_db} -k {params.keep_results} \
+		-s {params.hierarchical_threshold} -l {log}
+		"""
 
 rule krona:
 	input:
-		config["output"] + "/11_taxonomy/taxonomy_for_krona.txt"
+		os.path.join(config["output"], "10_taxonomy/taxonomy.krona.txt")
 	output:
-		config["output"] + "/11_taxonomy/krona_plot.html"
+		os.path.join(config["output"], "10_taxonomy/krona_plot.html")
 	conda:
-		os.path.join(workflow.basedir, "envs/mb_krona.yaml")
+		"envs/mb_krona.yaml"
 	message:
 		"Creating Krona Plot"
 	shell:
 		"ktImportText -q {input} -o {output}"
+
+rule merge_tables:
+	input:
+		community_table = os.path.join(config["output"], "09_community_table/community_table.txt"),
+		tax_table = os.path.join(config["output"], "10_taxonomy/taxonomy.txt")
+	output:
+		merged_table = os.path.join(config["output"], "11_merged/community_and_tax_merged.txt")
+	message:
+		"Merging community and taxonomy Tables"
+	run:
+		community_table = pd.read_csv(input.community_table, sep='\t', index_col = 0)
+		tax_table = pd.read_csv(input.tax_table, sep = '\t', index_col = 1).iloc[:,1:]
+		ASV_with_size_lst = tax_table.index.tolist()
+		ASV_sans_size_lst = []
+		for ASV in ASV_with_size_lst:
+		    ASV_sans_size_lst.append(ASV.split(";")[0])
+		tax_table.index = ASV_sans_size_lst
+		merged_table = pd.merge(community_table, tax_table, left_index=True, right_index=True)
+		merged_table.to_csv(output.merged_table, sep='\t')
+
+rule generate_report:
+	input:
+		community_table = os.path.join(config["output"], "09_community_table/community_table.txt"),
+		custom_mqc_config = os.path.join(workflow.basedir, "multiqc_config.yaml"),
+		stat_table_mqc = os.path.join(config["output"], "10_taxonomy/stats_mqc.csv")
+	output:
+		os.path.join(config["output"], "12_report/multiqc_report.html")
+	conda:
+		"envs/mb_multiqc.yaml"
+	params:
+		output_dir = os.path.join(config["output"], "12_report/"),
+		log_dir = os.path.join(config["output"], "logs")
+	message:
+		"Generating MultiQC report"
+	log:
+		os.path.join(config["output"], "logs/12_MultiQC/multiqc.txt")
+	shell:
+		"""
+		multiqc {params.log_dir} {input.stat_table_mqc} -o {params.output_dir} \
+		--config {input.custom_mqc_config} &> {log}
+		"""

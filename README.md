@@ -177,6 +177,13 @@ hierarchical_threshold: "0.8"
 threads: 6
 ```
 
+### 1.2 Unlocking
+Snakemake by default locks the directories in which the results are saved. If a run fails, the directories remain locked and if you attempt to rerun the pipeline with the same output directory, you get an error message. To unlock the directory, simply run the following script:
+
+```bash
+bash run_pipeline.sh example_config.yaml
+```
+
 ## 2. Workflow
 
 ```mermaid

@@ -171,6 +171,7 @@ rule generate_community_table:
 		db = os.path.join(config["output"], "08_ASVs_nonchimeras/ASVs_nonchimeras.fasta")
 	output:
 		community_table = os.path.join(config["output"], "09_community_table/community_table.txt"),
+		community_table_biom = os.path.join(config["output"], "09_community_table/community_table.biom"),
 	params:
 		options = " ".join(config["community_table_options"]),
 	conda:
@@ -184,7 +185,7 @@ rule generate_community_table:
 	shell:
 		"""
 		vsearch --threads {threads} --usearch_global {input.search} --db {input.db} \
-		{params.options} --otutabout {output.community_table} &>> {log}
+		{params.options} --otutabout {output.community_table} --biomout {output.community_table_biom} &>> {log}
 		"""
 
 rule taxonomy:

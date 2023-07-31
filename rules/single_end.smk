@@ -22,10 +22,26 @@ rule cutadapt:
 		{input.input_fw} &>>  {log}
 		"""
 
-rule quality_filter:
-	""" Rule for quality filtering """
+rule relabel:
+	""" Rule for relabeling of the fastq headers """
 	input:
 		os.path.join(config["output"], "01_trimmed_data/{basename}.gz"),
+	output:
+		os.path.join(config["output"], "02_relabeled/{basename}")
+	params:
+		script_path = os.path.join(workflow.basedir, "scripts/relabel.py")
+	threads: 1
+	message:
+		"Relabeling FASTQ Headers"
+	shell:
+		"""
+		python3 {params.script_path} -i {input} -o {output}   
+		"""
+
+rule quality_filter_single:
+	""" Rule for quality filtering """
+	input:
+		os.path.join(config["output"], "02_relabeled/{basename}")
 	output:
 		os.path.join(config["output"], "03_filtered_data/{basename}.fasta")
 	params:
@@ -38,17 +54,19 @@ rule quality_filter:
 	log:
 		os.path.join(config["output"], "logs/03_quality_filtering/{basename}.txt")
 	shell:
-		"vsearch --threads {threads} --fastq_filter {input} {params.options} --fastaout {output} &>> {log}"
+		"""
+		vsearch --threads {threads} --fastq_filter {input} {params.options} --fastaout {output} &>> {log}
+		"""
 
 rule dereplicate:
-	""" Rule to remove duplicates """
+	""" Rule to remove duplicates and relabel the samples"""
 	input:
 		os.path.join(config["output"], "03_filtered_data/{basename}.fasta")
 	output:
 		os.path.join(config["output"], "04_derep_data/{basename}.fasta")
 	params:
 		filename = "{basename}.fasta",
-		options = " ".join(config["derep1_options"])
+		options = " ".join(config["derep1_options"]),
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
@@ -63,10 +81,7 @@ rule concatenate:
 	""" Rule to concatenate all files into one """
 	input:
 		expand(
-			os.path.join(
-				config["output"],
-				"04_derep_data/{basename}.fasta"
-			),
+			os.path.join(config["output"], "04_derep_data/{basename}.fasta"),
 			zip,
 			basename = files_single.basename,
 		)

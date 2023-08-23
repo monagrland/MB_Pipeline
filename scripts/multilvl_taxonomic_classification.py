@@ -322,29 +322,10 @@ def get_tax_from_samfile(samfile_path):
     # The following loop is needed to account for missing taxonomic
     tax_lst_of_lst_with_NA = []
     for tax_lst in tax_lst_of_lst:
-        kingdom = "k:NA"
-        phylum = "p:NA"
-        clss = "c:NA"
-        order = "o:NA"
-        family = "f:NA"
-        genus = "g:NA"
-        species = "s:NA"
-        for taxon in tax_lst:
-            if taxon.startswith("k:"):
-                kingdom = taxon
-            elif taxon.startswith("p:"):
-                phylum = taxon
-            elif taxon.startswith("c:"):
-                clss = taxon
-            elif taxon.startswith("o:"):
-                order = taxon
-            elif taxon.startswith("f:"):
-                family = taxon
-            elif taxon.startswith("g:"):
-                genus = taxon
-            elif taxon.startswith("s:"):
-                species = taxon
-        taxonomy_with_NA = [kingdom, phylum, clss, order, family, genus, species]
+        ranks_let = ['k','p','c','o','f','g','s']
+        # taxon elements are formatted like: k:Metazoa
+        taxdict = { taxon.split(":")[0] : ":".join(taxon.split(":")[1:]) for taxon in tax_lst }
+        taxonomy_with_NA = [(":".join([r, taxdict[r]]) if r in taxdict else r + ":NA") for r in ranks_let]
         tax_lst_of_lst_with_NA.append(taxonomy_with_NA)
 
     sam_df[ranks_lst] = tax_lst_of_lst_with_NA  # add taxonomy as seperate columns

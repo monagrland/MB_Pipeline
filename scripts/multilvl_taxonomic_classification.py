@@ -15,6 +15,8 @@ import csv
 import sys
 import numpy as np
 
+TAXONOMIC_RANKS = [
+    "Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]
 
 def arg():
     parser = argparse.ArgumentParser("Multilevel direct taxonomic classification")
@@ -266,15 +268,7 @@ def format_hierarchical_classification(output, threshold):
                 names_lst[i][j] == ""
 
     names_df = pd.DataFrame(names_lst)
-    names_df.columns = [
-        "Kingdom",
-        "Phylum",
-        "Class",
-        "Order",
-        "Family",
-        "Genus",
-        "Species",
-    ]
+    names_df.columns = TAXONOMIC_RANKS
     names_df.insert(0, "ASV", otu_name_lst)
     names_df["Kingdom"] = names_df.loc[:, "Kingdom"].str.replace("d:", "k:")
     return names_df
@@ -299,10 +293,9 @@ def get_tax_from_samfile(samfile_path):
         hit above the threshold
 
     """
-    ranks_lst = ["Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]
     if os.path.getsize(samfile_path) == 0:
         print(f"No hits in {samfile_path}.")
-        return pd.DataFrame(columns=["ASV"] + ranks_lst)
+        return pd.DataFrame(columns=["ASV"] + TAXONOMIC_RANKS)
 
     sam_df = pd.read_csv(samfile_path, sep="\t", header=None)
     sam_df = sam_df.iloc[:, [0, 2]]
@@ -328,7 +321,7 @@ def get_tax_from_samfile(samfile_path):
         taxonomy_with_NA = [(":".join([r, taxdict[r]]) if r in taxdict else r + ":NA") for r in ranks_let]
         tax_lst_of_lst_with_NA.append(taxonomy_with_NA)
 
-    sam_df[ranks_lst] = tax_lst_of_lst_with_NA  # add taxonomy as seperate columns
+    sam_df[TAXONOMIC_RANKS] = tax_lst_of_lst_with_NA  # add taxonomy as seperate columns
 
     unique_ASV_lst = list(
         set(sam_df["ASV"].tolist())
@@ -343,7 +336,7 @@ def get_tax_from_samfile(samfile_path):
             taxonomy_lst_of_lst.append(tax_row)
         else:
             tax_row = [ASV]
-            for tax_rank in ranks_lst:
+            for tax_rank in TAXONOMIC_RANKS:
                 unique_tax_set = set(
                     ASV_df.loc[:, tax_rank]
                 )  # removes duplicates from column
@@ -353,7 +346,7 @@ def get_tax_from_samfile(samfile_path):
                     tax_row.append("")
             taxonomy_lst_of_lst.append(tax_row)
     cleaned_taxonomy_table = pd.DataFrame(
-        taxonomy_lst_of_lst, columns=(["ASV"] + ranks_lst)
+        taxonomy_lst_of_lst, columns=(["ASV"] + TAXONOMIC_RANKS)
     )
     return cleaned_taxonomy_table
 
@@ -491,17 +484,8 @@ def main():
     At the moment, the taxonomy_df dataframe contains cells with the string "", but some sc
     ripts cant work with that, thats why we replace it in the next few lines
     """
-    columns_to_fill = [
-        "Kingdom",
-        "Phylum",
-        "Class",
-        "Order",
-        "Family",
-        "Genus",
-        "Species",
-    ]
     replace_values = ["k:", "p:", "c:", "o:", "f:", "g:", "s:"]
-    for column, value in zip(columns_to_fill, replace_values):
+    for column, value in zip(TAXONOMIC_RANKS, replace_values):
         taxonomy_df[column] = taxonomy_df[column].replace("", np.nan).fillna(value)
 
     taxonomy_df.to_csv(output, sep="\t")

@@ -108,4 +108,4 @@ rule concatenate:
 	log:
 		os.path.join(config["output"], "logs/05_concatenate/all_reads.txt")
 	shell:
-		"cat {params.derep_dir}*.fasta > {output}"
+		"cat {params.derep_dir}*.fasta > {output} 2> {log}"

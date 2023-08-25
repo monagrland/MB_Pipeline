@@ -35,7 +35,7 @@ rule relabel:
 		"Relabeling FASTQ Headers"
 	shell:
 		"""
-		python3 {params.script_path} -i {input} -o {output}   
+		python3 {params.script_path} -i {input} -o {output}
 		"""
 
 rule quality_filter_single:
@@ -94,4 +94,4 @@ rule concatenate:
 	log:
 		os.path.join(config["output"], "logs/05_concatenate/all_reads.txt")
 	shell:
-		"cat {params.derep_dir}*.fasta > {output}"
+		"cat {params.derep_dir}*.fasta > {output} 2> {log}"

@@ -84,7 +84,7 @@ rule taxonomy:
 		plot = os.path.join(config["output"], "10_taxonomy/taxonomy.krona.txt"),
 		stat_table_mqc = os.path.join(config["output"], "10_taxonomy/stats_mqc.csv")
 	params:
-		keep_results = False,
+		keep_results = True,
 		hierarchical_threshold = config["hierarchical_threshold"],
 		script_path = os.path.join(workflow.basedir, "scripts/multilvl_taxonomic_classification.py")
 	threads:

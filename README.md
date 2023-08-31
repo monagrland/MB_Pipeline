@@ -34,6 +34,9 @@ Snakemake itself will be installed to a Conda environment named `mb_snakemake`,
 which will be activated before running the pipeline, if this environment does
 not already exist.
 
+To delete temporary files (trimmed, merged, dereplicated reads), remove the
+option `--notemp` from the Snakemake command in `run_pipeline.sh`.
+
 ### 1.1 Config File Structure
 
 The config file is a simple .yaml file containing all required information. An

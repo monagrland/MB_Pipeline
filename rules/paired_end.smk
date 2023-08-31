@@ -4,8 +4,8 @@ rule cutadapt:
 		input_fw = os.path.join(config["directory"], "{prefix}_R1_{suffix}.gz"),
 		input_rv = os.path.join(config["directory"], "{prefix}_R2_{suffix}.gz")
 	output:
-		output_fw = os.path.join(config["output"], "01_trimmed_data/{prefix}_R1_{suffix}.gz"),
-		output_rv = os.path.join(config["output"], "01_trimmed_data/{prefix}_R2_{suffix}.gz")
+		output_fw = temp(os.path.join(config["output"], "01_trimmed_data/{prefix}_R1_{suffix}.gz")),
+		output_rv = temp(os.path.join(config["output"], "01_trimmed_data/{prefix}_R2_{suffix}.gz"))
 	params:
 		options = " ".join(config["adapter_trimming_options"]),
 		filename_fw = "{prefix}_R1_{suffix}.gz",
@@ -29,7 +29,7 @@ rule merge:
 		input_fw = os.path.join(config["output"], "01_trimmed_data/{prefix}_R1_{suffix}.gz"),
 		input_rv = os.path.join(config["output"], "01_trimmed_data/{prefix}_R2_{suffix}.gz")
 	output:
-		os.path.join(config["output"], "02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq")
+		temp(os.path.join(config["output"], "02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq"))
 	params:
 		options = " ".join(config["merge_options"]),
 		filename_fw = "{prefix}_R1_{suffix}.gz",
@@ -55,7 +55,7 @@ rule quality_filter:
 	input:
 		os.path.join(config["output"], "02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq")
 	output:
-		os.path.join(config["output"], "03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
+		temp(os.path.join(config["output"], "03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"))
 	params:
 		options = " ".join(config["filter_options"]),
 	conda:
@@ -73,7 +73,7 @@ rule dereplicate:
 	input:
 		os.path.join(config["output"], "03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
 	output:
-		os.path.join(config["output"], "04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
+		temp(os.path.join(config["output"], "04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"))
 	params:
 		filename = "{prefix}_{suffix}.fasta",
 		options = " ".join(config["derep1_options"])
@@ -100,7 +100,7 @@ rule concatenate:
 			suffix = fw_files.suffix
 		)
 	output:
-		os.path.join(config["output"], "05_concatenated_data/all_reads.fasta")
+		temp(os.path.join(config["output"], "05_concatenated_data/all_reads.fasta"))
 	params:
 		derep_dir = os.path.join(config["output"], "04_derep_data/")
 	message:

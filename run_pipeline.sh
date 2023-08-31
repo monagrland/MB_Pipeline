@@ -7,6 +7,6 @@ THREADS=($(grep "threads:" $1 | sed s/"threads: "/""/))
 conda activate mb_snakemake
 echo "Activated conda environment."
 echo "Starting the pipeline using $THREADS threads."
-snakemake --use-conda --cores $THREADS --conda-frontend conda --configfile $1
+snakemake --use-conda --cores $THREADS --conda-frontend conda --notemp --configfile $1
 ENDTIME=$(date +%s)
 echo "It took $(($ENDTIME - $STARTTIME)) seconds to finish this run."

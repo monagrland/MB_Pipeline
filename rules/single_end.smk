@@ -2,10 +2,8 @@ rule cutadapt:
 	""" Rule to remove the Adapter Sequences from the reads """
 	input:
 		input_fw = os.path.join(config["directory"], "{basename}.gz"),
-
 	output:
-		output_fw = os.path.join(config["output"], "01_trimmed_data/{basename}.gz"),
-
+		temp(output_fw = os.path.join(config["output"], "01_trimmed_data/{basename}.gz")),
 	params:
 		options = " ".join(config["adapter_trimming_options"]),
 		filename_fw = "{basename}.gz",
@@ -27,7 +25,7 @@ rule relabel:
 	input:
 		os.path.join(config["output"], "01_trimmed_data/{basename}.gz"),
 	output:
-		os.path.join(config["output"], "02_relabeled/{basename}")
+		temp(os.path.join(config["output"], "02_relabeled/{basename}"))
 	params:
 		script_path = os.path.join(workflow.basedir, "scripts/relabel.py")
 	threads: 1
@@ -43,7 +41,7 @@ rule quality_filter_single:
 	input:
 		os.path.join(config["output"], "02_relabeled/{basename}")
 	output:
-		os.path.join(config["output"], "03_filtered_data/{basename}.fasta")
+		temp(os.path.join(config["output"], "03_filtered_data/{basename}.fasta"))
 	params:
 		options = " ".join(config["filter_options"]),
 	conda:
@@ -63,7 +61,7 @@ rule dereplicate:
 	input:
 		os.path.join(config["output"], "03_filtered_data/{basename}.fasta")
 	output:
-		os.path.join(config["output"], "04_derep_data/{basename}.fasta")
+		temp(os.path.join(config["output"], "04_derep_data/{basename}.fasta"))
 	params:
 		filename = "{basename}.fasta",
 		options = " ".join(config["derep1_options"]),
@@ -86,7 +84,7 @@ rule concatenate:
 			basename = files_single.basename,
 		)
 	output:
-		os.path.join(config["output"], "05_concatenated_data/all_reads.fasta")
+		temp(os.path.join(config["output"], "05_concatenated_data/all_reads.fasta"))
 	params:
 		derep_dir = os.path.join(config["output"], "04_derep_data/")
 	message:

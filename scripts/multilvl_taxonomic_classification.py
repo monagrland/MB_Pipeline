@@ -424,36 +424,26 @@ def statistics(log, stats_table_path):
     stat_df.to_csv(stats_table_path, sep="\t")
 
 
-def main():
-    args = arg()
-    ASVs = args.ASVs
-    db_lst = args.db_list
-    threshold = args.threshold
-    sintax_cutoff_hierarchical = args.sintax_cutoff
-    output = args.output
-    threads = args.threads
-    h_db = args.hierarchical_db
-    keep_results = args.keep_results
-    logfile = args.log if args.log is not None else f"{os.path.splitext(output)[0]}.log"
+def main(args):
+    output = args['output']
+    logfile = args['log'] if args['log'] is not None else f"{os.path.splitext(output)[0]}.log"
     conda_path = sys.exec_prefix
-
     count = 0
-    nohit_path = ASVs
-    for db in db_lst:
+    for db in args['db_list']:
         count += 1
         direct_classification(
-            nohit_path,
+            args['ASVs'],
             db,
-            threshold,
+            args['threshold'],
             output,
-            str(threads),
+            str(args['threads']),
             str(count),
             conda_path,
             logfile,
         )
         samfile_path = f"{os.path.splitext(output)[0]}.{count}.direct.sam"
         tax_from_samfile_df = get_tax_from_samfile(samfile_path)
-        nohit_path, hit_ASVs = format_dir_classification(nohit_path, output, str(count))
+        args['ASVs'], hit_ASVs = format_dir_classification(args['ASVs'], output, str(count))
         if count == 1:
             taxonomy_sans_multihits = tax_from_samfile_df
             hits_df = hit_ASVs
@@ -468,9 +458,10 @@ def main():
             header=None,
             index=None,
         )
-    hierarchical_classification(nohit_path, h_db, output, threads, conda_path, logfile)
+    hierarchical_classification(
+        args['ASVs'], args['hierarchical_db'], output, args['threads'], conda_path, logfile)
     formatted_hierarchical_classification = format_hierarchical_classification(
-        output, sintax_cutoff_hierarchical
+        output, args['sintax_cutoff']
     )
     if len(hits_df) > 0:
         formatted_direct_classification = taxonomy_sans_multihits
@@ -480,10 +471,10 @@ def main():
     else:
         taxonomy_df = formatted_hierarchical_classification
 
-    """
-    At the moment, the taxonomy_df dataframe contains cells with the string "", but some sc
-    ripts cant work with that, thats why we replace it in the next few lines
-    """
+    # At the moment, the taxonomy_df dataframe contains cells with the string
+    # "", but some scripts cant work with that, thats why we replace it in the
+    # next few lines
+
     replace_values = ["k:", "p:", "c:", "o:", "f:", "g:", "s:"]
     for column, value in zip(TAXONOMIC_RANKS, replace_values):
         taxonomy_df[column] = taxonomy_df[column].replace("", np.nan).fillna(value)
@@ -497,7 +488,7 @@ def main():
     statistics_file_path = f"{os.path.dirname(output)}/stats_mqc.csv"
     statistics(logfile, statistics_file_path)
 
-    if not keep_results:
+    if not args['keep_results']:
         out_directory = os.path.dirname(output)
         subprocess.run(f"rm {out_directory}/*.direct.*", shell=True)
         subprocess.run(f"rm {out_directory}/*.hierarchical.*", shell=True)
@@ -505,4 +496,18 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try: # Called from within Snakemake pipeline
+        args = {
+            "db_list" : snakemake.config['direct_dbs'],
+            "hierarchical_db" : snakemake.config['hierarchical_db'],
+            "threshold" : snakemake.config['classification_threshold'],
+            "keep_results" : snakemake.params['keep_results'],
+            "sintax_cutoff" : snakemake.params['hierarchical_threshold'],
+            "ASVs" : snakemake.input['ASVs'][0],
+            "output" : snakemake.output['base'][0],
+            "threads" : snakemake.threads,
+            "log" : snakemake.log,
+        }
+    except NameError:
+        args = vars(arg()) # convert to dict
+    main(args=args)

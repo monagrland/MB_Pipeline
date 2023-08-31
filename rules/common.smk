@@ -84,10 +84,7 @@ rule taxonomy:
 		plot = os.path.join(config["output"], "10_taxonomy/taxonomy.krona.txt"),
 		stat_table_mqc = os.path.join(config["output"], "10_taxonomy/stats_mqc.csv")
 	params:
-		direct_db_lst = config["direct_dbs"],
-		hierarchical_db = config["hierarchical_db"],
-		threshold = config["classification_threshold"],
-		keep_results = "False",
+		keep_results = False,
 		hierarchical_threshold = config["hierarchical_threshold"],
 		script_path = os.path.join(workflow.basedir, "scripts/multilvl_taxonomic_classification.py")
 	threads:
@@ -98,13 +95,7 @@ rule taxonomy:
 		"../envs/mb_taxonomy.yaml"
 	log:
 		os.path.join(config["output"], "logs/10_taxonomy/taxonomy.log")
-	shell:
-		"""
-		python3 {params.script_path} -d {params.direct_db_lst} -z {input.ASVs} \
-		-t {params.threshold} -o {output.base} -n {threads} \
-		-p {params.hierarchical_db} -k {params.keep_results} \
-		-s {params.hierarchical_threshold} -l {log}
-		"""
+	script: "{params.script_path}"
 
 rule krona:
 	input:

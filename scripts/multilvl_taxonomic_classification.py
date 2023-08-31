@@ -503,11 +503,11 @@ if __name__ == "__main__":
             "threshold" : snakemake.config['classification_threshold'],
             "keep_results" : snakemake.params['keep_results'],
             "sintax_cutoff" : snakemake.params['hierarchical_threshold'],
-            "ASVs" : snakemake.input['ASVs'][0],
-            "output" : snakemake.output['base'][0],
+            "ASVs" : snakemake.input['ASVs'],
+            "output" : snakemake.output['base'],
             "threads" : snakemake.threads,
-            "log" : snakemake.log,
+            "log" : snakemake.log[0],
         }
-    except NameError:
+    except NameError: # Called from commandline
         args = vars(arg()) # convert to dict
     main(args=args)

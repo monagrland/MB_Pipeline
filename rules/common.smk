@@ -8,8 +8,7 @@ rule dereplicate_2:
 		options = " ".join(config["derep2_options"])
 	conda:
 		"../envs/mb_vsearch.yaml"
-	threads:
-		config["threads"]
+	threads: workflow.cores
 	message:
 		"Removing redundant reads for all reads"
 	log:
@@ -26,8 +25,7 @@ rule denoising:
 		options = " ".join(config["denoise_options"])
 	conda:
 		"../envs/mb_vsearch.yaml"
-	threads:
-		config["threads"]
+	threads: workflow.cores
 	message:
 		"Generating ASVs"
 	log:
@@ -44,8 +42,7 @@ rule remove_chimeras:
 		options = " ".join(config["chimera_check_options"])
 	conda:
 		"../envs/mb_vsearch.yaml"
-	threads:
-		config["threads"]
+	threads: workflow.cores
 	message:
 		"Removing Chimeras"
 	log:
@@ -64,8 +61,7 @@ rule generate_community_table:
 		options = " ".join(config["community_table_options"]),
 	conda:
 		"../envs/mb_vsearch.yaml"
-	threads:
-		config["threads"]
+	threads: workflow.cores
 	message:
 		"Generating community table"
 	log:
@@ -87,8 +83,7 @@ rule taxonomy:
 		keep_results = True,
 		hierarchical_threshold = config["hierarchical_threshold"],
 		script_path = os.path.join(workflow.basedir, "scripts/multilvl_taxonomic_classification.py")
-	threads:
-		config["threads"]
+	threads: workflow.cores
 	message:
 		"Starting Multilevel Taxonomic Classification"
 	conda:

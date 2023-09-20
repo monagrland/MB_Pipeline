@@ -44,4 +44,3 @@ direct_dbs:
 hierarchical_db: "/mnt/data/databases/bcd_trnl/trnl_viridiplantae_all.fa"
 classification_threshold: "0.97"
 hierarchical_threshold: "0.8"
-threads: 6

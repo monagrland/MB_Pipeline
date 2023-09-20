@@ -23,10 +23,6 @@ def arg():
     return parser.parse_args()
 
 
-input_file = "/mnt/data/homes/krueger_l/Dokumente/Metabarcoding/Pollen_Methodenvergleich/pipe_results_ITS2_wuerzburg_fw/01_trimmed_data/F-HEAD-1-R-TAIL-15_R1_001.fastq.gz"
-output_file = "/mnt/data/homes/krueger_l/Dokumente/Metabarcoding/Pollen_Methodenvergleich/pipe_results_ITS2_wuerzburg_fw/02_relabeled/F-HEAD-1-R-TAIL-15_R1_001.fastq"
-
-
 def update_headers(input_file, output_file):
     # Extract the filename without the extension
     basename = os.path.basename(

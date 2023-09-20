@@ -15,6 +15,8 @@ import csv
 import sys
 import numpy as np
 
+TAXONOMIC_RANKS = [
+    "Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]
 
 def arg():
     parser = argparse.ArgumentParser("Multilevel direct taxonomic classification")
@@ -56,7 +58,7 @@ def arg():
     return parser.parse_args()
 
 
-def direct_classification(ASVs, db, threshold, output, threads, run_nr, conda, log):
+def direct_classification(ASVs, db, threshold, output, threads, run_nr, log):
     """
     Function to start the direct Classification.
 
@@ -87,18 +89,7 @@ def direct_classification(ASVs, db, threshold, output, threads, run_nr, conda, l
     output = f"{os.path.splitext(output)[0]}.{run_nr}.direct.txt"
     output_sam = f"{os.path.splitext(output)[0]}.sam"
     cmd = f"vsearch --usearch_global {ASVs} -db {db} --id {threshold} --uc {output} --threads {threads} -samout {output_sam} -maxaccepts 100 --strand both 2>> {log}"
-    conda_path = (
-        subprocess.check_output("conda info | grep 'base environment'", shell=True)
-        .decode("utf8")
-        .replace("base environment : ", "")
-        .replace("(read only)", "")
-        .strip()
-    )
-    conda_act_path = conda_path + "/etc/profile.d/conda.sh"
-    subprocess.run(
-        f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate",
-        shell=True,
-    )
+    subprocess.run(cmd, shell=True)
     print(f"##### Finished Direct Vsearch Classification level {run_nr} #####")
 
 
@@ -139,7 +130,7 @@ def format_dir_classification(ASVs_path, output, run_nr):
     return (nohit_fasta_path, hit_ASVs_df)
 
 
-def hierarchical_classification(nohit_ASVs, db, output, threads, conda, log):
+def hierarchical_classification(nohit_ASVs, db, output, threads, log):
     """
     Function to start the hierarchical classification
 
@@ -165,18 +156,7 @@ def hierarchical_classification(nohit_ASVs, db, output, threads, conda, log):
     print("##### Hierarchical Vsearch Classification #####")
     output = os.path.splitext(output)[0] + ".hierarchical.txt"
     cmd = f"vsearch --sintax {nohit_ASVs} -db {db} -tabbedout {output} -threads {threads} -strand plus 2>> {log}"
-    conda_path = (
-        subprocess.check_output("conda info | grep 'base environment'", shell=True)
-        .decode("utf8")
-        .replace("base environment : ", "")
-        .replace("(read only)", "")
-        .strip()
-    )
-    conda_act_path = conda_path + "/etc/profile.d/conda.sh"
-    subprocess.run(
-        f". {conda_act_path} && conda activate {conda} && {cmd} && conda deactivate",
-        shell=True,
-    )
+    subprocess.run(cmd, shell=True)
     print("##### Finished Hierarchical Vsearch Classification #####")
 
 
@@ -266,15 +246,7 @@ def format_hierarchical_classification(output, threshold):
                 names_lst[i][j] == ""
 
     names_df = pd.DataFrame(names_lst)
-    names_df.columns = [
-        "Kingdom",
-        "Phylum",
-        "Class",
-        "Order",
-        "Family",
-        "Genus",
-        "Species",
-    ]
+    names_df.columns = TAXONOMIC_RANKS
     names_df.insert(0, "ASV", otu_name_lst)
     names_df["Kingdom"] = names_df.loc[:, "Kingdom"].str.replace("d:", "k:")
     return names_df
@@ -299,10 +271,9 @@ def get_tax_from_samfile(samfile_path):
         hit above the threshold
 
     """
-    ranks_lst = ["Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]
     if os.path.getsize(samfile_path) == 0:
         print(f"No hits in {samfile_path}.")
-        return pd.DataFrame(columns=["ASV"] + ranks_lst)
+        return pd.DataFrame(columns=["ASV"] + TAXONOMIC_RANKS)
 
     sam_df = pd.read_csv(samfile_path, sep="\t", header=None)
     sam_df = sam_df.iloc[:, [0, 2]]
@@ -322,32 +293,13 @@ def get_tax_from_samfile(samfile_path):
     # The following loop is needed to account for missing taxonomic
     tax_lst_of_lst_with_NA = []
     for tax_lst in tax_lst_of_lst:
-        kingdom = "k:NA"
-        phylum = "p:NA"
-        clss = "c:NA"
-        order = "o:NA"
-        family = "f:NA"
-        genus = "g:NA"
-        species = "s:NA"
-        for taxon in tax_lst:
-            if taxon.startswith("k:"):
-                kingdom = taxon
-            elif taxon.startswith("p:"):
-                phylum = taxon
-            elif taxon.startswith("c:"):
-                clss = taxon
-            elif taxon.startswith("o:"):
-                order = taxon
-            elif taxon.startswith("f:"):
-                family = taxon
-            elif taxon.startswith("g:"):
-                genus = taxon
-            elif taxon.startswith("s:"):
-                species = taxon
-        taxonomy_with_NA = [kingdom, phylum, clss, order, family, genus, species]
+        ranks_let = ['k','p','c','o','f','g','s']
+        # taxon elements are formatted like: k:Metazoa
+        taxdict = { taxon.split(":")[0] : ":".join(taxon.split(":")[1:]) for taxon in tax_lst }
+        taxonomy_with_NA = [(":".join([r, taxdict[r]]) if r in taxdict else r + ":NA") for r in ranks_let]
         tax_lst_of_lst_with_NA.append(taxonomy_with_NA)
 
-    sam_df[ranks_lst] = tax_lst_of_lst_with_NA  # add taxonomy as seperate columns
+    sam_df[TAXONOMIC_RANKS] = tax_lst_of_lst_with_NA  # add taxonomy as seperate columns
 
     unique_ASV_lst = list(
         set(sam_df["ASV"].tolist())
@@ -362,7 +314,7 @@ def get_tax_from_samfile(samfile_path):
             taxonomy_lst_of_lst.append(tax_row)
         else:
             tax_row = [ASV]
-            for tax_rank in ranks_lst:
+            for tax_rank in TAXONOMIC_RANKS:
                 unique_tax_set = set(
                     ASV_df.loc[:, tax_rank]
                 )  # removes duplicates from column
@@ -372,7 +324,7 @@ def get_tax_from_samfile(samfile_path):
                     tax_row.append("")
             taxonomy_lst_of_lst.append(tax_row)
     cleaned_taxonomy_table = pd.DataFrame(
-        taxonomy_lst_of_lst, columns=(["ASV"] + ranks_lst)
+        taxonomy_lst_of_lst, columns=(["ASV"] + TAXONOMIC_RANKS)
     )
     return cleaned_taxonomy_table
 
@@ -450,36 +402,24 @@ def statistics(log, stats_table_path):
     stat_df.to_csv(stats_table_path, sep="\t")
 
 
-def main():
-    args = arg()
-    ASVs = args.ASVs
-    db_lst = args.db_list
-    threshold = args.threshold
-    sintax_cutoff_hierarchical = args.sintax_cutoff
-    output = args.output
-    threads = args.threads
-    h_db = args.hierarchical_db
-    keep_results = args.keep_results
-    logfile = args.log if args.log is not None else f"{os.path.splitext(output)[0]}.log"
-    conda_path = sys.exec_prefix
-
+def main(args):
+    output = args['output']
+    logfile = args['log'] if args['log'] is not None else f"{os.path.splitext(output)[0]}.log"
     count = 0
-    nohit_path = ASVs
-    for db in db_lst:
+    for db in args['db_list']:
         count += 1
         direct_classification(
-            nohit_path,
+            args['ASVs'],
             db,
-            threshold,
+            args['threshold'],
             output,
-            str(threads),
+            str(args['threads']),
             str(count),
-            conda_path,
             logfile,
         )
         samfile_path = f"{os.path.splitext(output)[0]}.{count}.direct.sam"
         tax_from_samfile_df = get_tax_from_samfile(samfile_path)
-        nohit_path, hit_ASVs = format_dir_classification(nohit_path, output, str(count))
+        args['ASVs'], hit_ASVs = format_dir_classification(args['ASVs'], output, str(count))
         if count == 1:
             taxonomy_sans_multihits = tax_from_samfile_df
             hits_df = hit_ASVs
@@ -494,9 +434,10 @@ def main():
             header=None,
             index=None,
         )
-    hierarchical_classification(nohit_path, h_db, output, threads, conda_path, logfile)
+    hierarchical_classification(
+        args['ASVs'], args['hierarchical_db'], output, args['threads'], logfile)
     formatted_hierarchical_classification = format_hierarchical_classification(
-        output, sintax_cutoff_hierarchical
+        output, args['sintax_cutoff']
     )
     if len(hits_df) > 0:
         formatted_direct_classification = taxonomy_sans_multihits
@@ -506,21 +447,12 @@ def main():
     else:
         taxonomy_df = formatted_hierarchical_classification
 
-    """
-    At the moment, the taxonomy_df dataframe contains cells with the string "", but some sc
-    ripts cant work with that, thats why we replace it in the next few lines
-    """
-    columns_to_fill = [
-        "Kingdom",
-        "Phylum",
-        "Class",
-        "Order",
-        "Family",
-        "Genus",
-        "Species",
-    ]
+    # At the moment, the taxonomy_df dataframe contains cells with the string
+    # "", but some scripts cant work with that, thats why we replace it in the
+    # next few lines
+
     replace_values = ["k:", "p:", "c:", "o:", "f:", "g:", "s:"]
-    for column, value in zip(columns_to_fill, replace_values):
+    for column, value in zip(TAXONOMIC_RANKS, replace_values):
         taxonomy_df[column] = taxonomy_df[column].replace("", np.nan).fillna(value)
 
     taxonomy_df.to_csv(output, sep="\t")
@@ -532,7 +464,7 @@ def main():
     statistics_file_path = f"{os.path.dirname(output)}/stats_mqc.csv"
     statistics(logfile, statistics_file_path)
 
-    if not keep_results:
+    if not args['keep_results']:
         out_directory = os.path.dirname(output)
         subprocess.run(f"rm {out_directory}/*.direct.*", shell=True)
         subprocess.run(f"rm {out_directory}/*.hierarchical.*", shell=True)
@@ -540,4 +472,18 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try: # Called from within Snakemake pipeline
+        args = {
+            "db_list" : snakemake.config['direct_dbs'],
+            "hierarchical_db" : snakemake.config['hierarchical_db'],
+            "threshold" : snakemake.config['classification_threshold'],
+            "keep_results" : snakemake.params['keep_results'],
+            "sintax_cutoff" : snakemake.params['hierarchical_threshold'],
+            "ASVs" : snakemake.input['ASVs'],
+            "output" : snakemake.output['base'],
+            "threads" : snakemake.threads,
+            "log" : snakemake.log[0],
+        }
+    except NameError: # Called from commandline
+        args = vars(arg()) # convert to dict
+    main(args=args)

@@ -9,12 +9,16 @@ import yaml
 fw_files = glob_wildcards(config["directory"] + "/{prefix}_R1_{suffix}.gz")
 files_single = glob_wildcards(config["directory"] + "/{basename}.gz")
 
+
 if config["paired"]:
 	include:
 		"rules/paired_end.smk"
 elif not config["paired"]:
 	include:
 		"rules/single_end.smk"
+
+include: "rules/common.smk"
+
 
 rule all:
 	input:

@@ -34,13 +34,18 @@ Snakemake itself will be installed to a Conda environment named `mb_snakemake`,
 which will be activated before running the pipeline, if this environment does
 not already exist.
 
+To delete temporary files (trimmed, merged, dereplicated reads), remove the
+option `--notemp` from the Snakemake command in `run_pipeline.sh`.
+
 ### 1.1 Config File Structure
 
-The config file is a simple .yaml file containing all required information. An example config file is provided: `example_config.yaml`.
+The config file is a simple .yaml file containing all required information. An
+example config file is provided: `example_config.yaml`.
 
 #### 1.1.1 Input
 
-You can specify the path to the directory containing the paired end reads at the `directory` key.
+You can specify the path to the directory containing the paired end reads at
+the `directory` key.
 
 ```yaml
 directory: /home/user/metabarcoding_raw_data
@@ -55,7 +60,8 @@ output: /home/user/metabarcoding_results
 ```
 
 #### 1.1.3 Paired
-If paired end reads are used, be sure to specify this at the `paired` key. This key accepts only `true` or `false`.
+If paired end reads are used, be sure to specify this at the `paired` key. This
+key accepts only `true` or `false`.
 
 ```yaml
 paired: true
@@ -178,7 +184,10 @@ threads: 6
 ```
 
 ### 1.2 Unlocking
-Snakemake by default locks the directories in which the results are saved. If a run fails, the directories remain locked and if you attempt to rerun the pipeline with the same output directory, you get an error message. To unlock the directory, simply run the following script:
+Snakemake by default locks the directories in which the results are saved. If a
+run fails, the directories remain locked and if you attempt to rerun the
+pipeline with the same output directory, you get an error message. To unlock
+the directory, simply run the following script:
 
 ```bash
 bash run_pipeline.sh example_config.yaml

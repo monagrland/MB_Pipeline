@@ -4,8 +4,8 @@ rule cutadapt:
 		input_fw = os.path.join(config["directory"], "{prefix}_R1_{suffix}.gz"),
 		input_rv = os.path.join(config["directory"], "{prefix}_R2_{suffix}.gz")
 	output:
-		output_fw = temp(os.path.join(config["output"], "01_trimmed_data/{prefix}_R1_{suffix}.gz")),
-		output_rv = temp(os.path.join(config["output"], "01_trimmed_data/{prefix}_R2_{suffix}.gz"))
+		output_fw = temp("01_trimmed_data/{prefix}_R1_{suffix}.gz"),
+		output_rv = temp("01_trimmed_data/{prefix}_R2_{suffix}.gz")
 	params:
 		options = " ".join(config["adapter_trimming_options"]),
 		filename_fw = "{prefix}_R1_{suffix}.gz",
@@ -16,7 +16,7 @@ rule cutadapt:
 	message:
 		"Executing adapter trimming for {params.filename_fw} and {params.filename_rv}"
 	log:
-		os.path.join(config["output"], "logs/01_cutadapt/{prefix}_{suffix}.txt")
+		"logs/01_cutadapt/{prefix}_{suffix}.txt"
 	shell:
 		"""
 		cutadapt --cores {threads} {params.options} -o {output.output_fw} -p {output.output_rv} \
@@ -26,10 +26,10 @@ rule cutadapt:
 rule merge:
 	""" Rule to merge paired end reads to a single file"""
 	input:
-		input_fw = os.path.join(config["output"], "01_trimmed_data/{prefix}_R1_{suffix}.gz"),
-		input_rv = os.path.join(config["output"], "01_trimmed_data/{prefix}_R2_{suffix}.gz")
+		input_fw = "01_trimmed_data/{prefix}_R1_{suffix}.gz",
+		input_rv = "01_trimmed_data/{prefix}_R2_{suffix}.gz"
 	output:
-		temp(os.path.join(config["output"], "02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq"))
+		temp("02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq")
 	params:
 		options = " ".join(config["merge_options"]),
 		filename_fw = "{prefix}_R1_{suffix}.gz",
@@ -41,7 +41,7 @@ rule merge:
 	message:
 		"Merging paired end reads for {params.filename_fw} and {params.filename_rv}"
 	log:
-		os.path.join(config["output"], "logs/02_merging/{prefix}_{suffix}.txt")
+		"logs/02_merging/{prefix}_{suffix}.txt"
 	shell:
 		"""
 		vsearch --threads {threads} \
@@ -53,9 +53,9 @@ rule merge:
 rule quality_filter:
 	""" Rule for quality filtering """
 	input:
-		os.path.join(config["output"], "02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq")
+		"02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq"
 	output:
-		temp(os.path.join(config["output"], "03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"))
+		temp("03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
 	params:
 		options = " ".join(config["filter_options"]),
 	conda:
@@ -64,16 +64,16 @@ rule quality_filter:
 	message:
 		"Executing Quality Filtering"
 	log:
-		os.path.join(config["output"], "logs/03_quality_filtering/{prefix}_{suffix}.txt")
+		"logs/03_quality_filtering/{prefix}_{suffix}.txt"
 	shell:
 		"vsearch --threads {threads} --fastq_filter {input} {params.options} --fastaout {output} &>> {log}"
 
 rule dereplicate:
 	""" Rule to remove duplicates """
 	input:
-		os.path.join(config["output"], "03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
+		"03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"
 	output:
-		temp(os.path.join(config["output"], "04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"))
+		temp("04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
 	params:
 		filename = "{prefix}_{suffix}.fasta",
 		options = " ".join(config["derep1_options"])
@@ -83,7 +83,7 @@ rule dereplicate:
 	message:
 		"Removing redundant reads for {params.filename}"
 	log:
-		os.path.join(config["output"], "logs/04_dereplicate/{prefix}_" + os.path.splitext("{suffix}")[0] + ".txt")
+		"logs/04_dereplicate/{prefix}_" + os.path.splitext("{suffix}")[0] + ".txt"
 	shell:
 		"vsearch --threads {threads} --derep_fulllength {input} --output {output} {params.options} &>> {log}"
 
@@ -100,12 +100,14 @@ rule concatenate:
 			suffix = fw_files.suffix
 		)
 	output:
-		temp(os.path.join(config["output"], "05_concatenated_data/all_reads.fasta"))
+		temp("05_concatenated_data/all_reads.fasta")
 	params:
-		derep_dir = os.path.join(config["output"], "04_derep_data/")
+		derep_dir = "04_derep_data/"
 	message:
 		"Concatenating all reads"
 	log:
-		os.path.join(config["output"], "logs/05_concatenate/all_reads.txt")
+		"logs/05_concatenate/all_reads.txt"
 	shell:
 		"cat {params.derep_dir}*.fasta > {output} 2> {log}"
+
+# vim: set noexpandtab:

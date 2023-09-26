@@ -3,7 +3,7 @@ rule cutadapt:
 	input:
 		input_fw = os.path.join(config["directory"], "{basename}.gz"),
 	output:
-		temp(output_fw = os.path.join(config["output"], "01_trimmed_data/{basename}.gz")),
+		temp(output_fw = "01_trimmed_data/{basename}.gz"),
 	params:
 		options = " ".join(config["adapter_trimming_options"]),
 		filename_fw = "{basename}.gz",
@@ -13,7 +13,7 @@ rule cutadapt:
 	message:
 		"Executing adapter trimming for {params.filename_fw}"
 	log:
-		os.path.join(config["output"], "logs/01_cutadapt/{basename}.txt")
+		"logs/01_cutadapt/{basename}.txt"
 	shell:
 		"""
 		cutadapt --cores {threads} {params.options} -o {output.output_fw} \
@@ -23,9 +23,9 @@ rule cutadapt:
 rule relabel:
 	""" Rule for relabeling of the fastq headers """
 	input:
-		os.path.join(config["output"], "01_trimmed_data/{basename}.gz"),
+		"01_trimmed_data/{basename}.gz",
 	output:
-		temp(os.path.join(config["output"], "02_relabeled/{basename}"))
+		temp("02_relabeled/{basename}")
 	params:
 		script_path = os.path.join(workflow.basedir, "scripts/relabel.py")
 	threads: 1
@@ -39,9 +39,9 @@ rule relabel:
 rule quality_filter_single:
 	""" Rule for quality filtering """
 	input:
-		os.path.join(config["output"], "02_relabeled/{basename}")
+		"02_relabeled/{basename}"
 	output:
-		temp(os.path.join(config["output"], "03_filtered_data/{basename}.fasta"))
+		temp("03_filtered_data/{basename}.fasta")
 	params:
 		options = " ".join(config["filter_options"]),
 	conda:
@@ -50,7 +50,7 @@ rule quality_filter_single:
 	message:
 		"Executing Quality Filtering"
 	log:
-		os.path.join(config["output"], "logs/03_quality_filtering/{basename}.txt")
+		"logs/03_quality_filtering/{basename}.txt"
 	shell:
 		"""
 		vsearch --threads {threads} --fastq_filter {input} {params.options} --fastaout {output} &>> {log}
@@ -59,9 +59,9 @@ rule quality_filter_single:
 rule dereplicate:
 	""" Rule to remove duplicates and relabel the samples"""
 	input:
-		os.path.join(config["output"], "03_filtered_data/{basename}.fasta")
+		"03_filtered_data/{basename}.fasta"
 	output:
-		temp(os.path.join(config["output"], "04_derep_data/{basename}.fasta"))
+		temp("04_derep_data/{basename}.fasta")
 	params:
 		filename = "{basename}.fasta",
 		options = " ".join(config["derep1_options"]),
@@ -71,7 +71,7 @@ rule dereplicate:
 	message:
 		"Removing redundant reads for {params.filename}"
 	log:
-		os.path.join(config["output"], "logs/04_dereplicate/{basename}.txt")
+		"logs/04_dereplicate/{basename}.txt"
 	shell:
 		"vsearch --threads {threads} --derep_fulllength {input} --output {output} {params.options} &>> {log}"
 
@@ -79,17 +79,19 @@ rule concatenate:
 	""" Rule to concatenate all files into one """
 	input:
 		expand(
-			os.path.join(config["output"], "04_derep_data/{basename}.fasta"),
+			"04_derep_data/{basename}.fasta",
 			zip,
 			basename = files_single.basename,
 		)
 	output:
-		temp(os.path.join(config["output"], "05_concatenated_data/all_reads.fasta"))
+		temp("05_concatenated_data/all_reads.fasta")
 	params:
-		derep_dir = os.path.join(config["output"], "04_derep_data/")
+		derep_dir = "04_derep_data/"
 	message:
 		"Concatenating all reads"
 	log:
-		os.path.join(config["output"], "logs/05_concatenate/all_reads.txt")
+		"logs/05_concatenate/all_reads.txt"
 	shell:
 		"cat {params.derep_dir}*.fasta > {output} 2> {log}"
+
+# vim: set noexpandtab:

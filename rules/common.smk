@@ -16,7 +16,7 @@ rule dereplicate_2:
 	shell:
 		"vsearch --threads {threads} --derep_fulllength {input} --output {output} {params.options} &>> {log}"
 
-rule denoising:
+rule denoising_unoise:
 	input:
 		os.path.join(config["output"], "06_derep_data/unique_reads.fasta")
 	output:
@@ -27,11 +27,60 @@ rule denoising:
 		"../envs/mb_vsearch.yaml"
 	threads: workflow.cores
 	message:
-		"Generating ASVs"
+		"Generating ASVs with vsearch cluster_unoise"
 	log:
 		os.path.join(config["output"], "logs/07_ASVs/all_reads.txt")
 	shell:
 		"vsearch --threads {threads} --cluster_unoise {input} --centroids {output} --relabel ASV {params.options} &>>{log}"
+
+rule rename_headers_for_dnoise:
+	# input file to dnoise can have only one ; char in Fasta headers
+	input:
+		os.path.join(config["output"], "06_derep_data/unique_reads.fasta")
+	output:
+		os.path.join(config["output"], "06_derep_data/unique_reads_rename.fasta")
+	threads: 1
+	shell:
+		"sed 's/;sample/_sample/' {input} | sed 's/;ee/_ee/' > {output};"
+
+rule denoising_dnoise:
+	input:
+		os.path.join(config["output"], "06_derep_data/unique_reads_rename.fasta")
+	output:
+		denoised=os.path.join(config["output"], "07_ASVs/ASVs_{alpha}_denoised_ratio_d.fasta")
+	conda:
+		"../envs/mb_dnoise.yaml"
+	params:
+		prefix=lambda wildcards: os.path.join(config["output"], f"07_ASVs/ASVs_{wildcards.alpha}"),
+		frame=3, # TODO move to config file
+	threads: 4
+	message:
+		"Denoising with DnoisE"
+	log:
+		os.path.join(config["output"], "logs/denoising_dnoise.{alpha}.log")
+	shell:
+		"""
+		dnoise --fasta_input {input} --alpha {wildcards.alpha} -x {params.frame} --cores {threads} --fasta_output {params.prefix} &> {log};
+		"""
+
+rule calc_entropy_dnoise:
+	input:
+		os.path.join(config["output"], "07_ASVs/ASVs_{alpha}_denoised_ratio_d.fasta")
+	output:
+		os.path.join(config["output"], "07_ASVs/ASVs_{alpha}_entropy_values.csv")
+	conda:
+		"../envs/mb_dnoise.yaml"
+	params:
+		prefix=lambda wildcards: os.path.join(config["output"], f"07_ASVs/ASVs_{wildcards.alpha}"),
+	threads: 4
+	message:
+		"Calculating entropy per codon position with DnoisE"
+	log:
+		os.path.join(config["output"], "logs/calc_entropy_dnoise.{alpha}.log")
+	shell:
+		"""
+		dnoise --fasta_input {input} -g --cores {threads} --csv_output {params.prefix} &> {log};
+		"""
 
 rule remove_chimeras:
 	input:
@@ -144,3 +193,5 @@ rule generate_report:
 		multiqc {params.log_dir} {input.stat_table_mqc} -o {params.output_dir} \
 		--config {input.custom_mqc_config} &> {log}
 		"""
+
+# vim: set noexpandtab:

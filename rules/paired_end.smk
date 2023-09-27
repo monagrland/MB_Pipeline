@@ -91,10 +91,7 @@ rule concatenate:
 	""" Rule to concatenate all files into one """
 	input:
 		expand(
-			os.path.join(
-				config["output"],
-				"04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"
-			),
+			"04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta",
 			zip,
 			prefix = fw_files.prefix,
 			suffix = fw_files.suffix

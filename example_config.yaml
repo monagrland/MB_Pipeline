@@ -24,10 +24,14 @@ derep2_options:
   - "--sizein"
   - "--sizeout"
   - "--fasta_width 0"
-denoise_options:
-  - "--sizein"
-  - "--sizeout"
-  - "--fasta_width 0"
+
+# For protein coding sequences only
+reading_frame_start: 3
+
+# Denoising
+denoise_alpha : 5 # Update this default value after viewing diagnostics
+denoise_minsize : 8 # Update this default value after viewing diagnostics
+
 chimera_check_options:
   - "--sizein"
   - "--sizeout"
@@ -44,3 +48,4 @@ direct_dbs:
 hierarchical_db: "/mnt/data/databases/bcd_trnl/trnl_viridiplantae_all.fa"
 classification_threshold: "0.97"
 hierarchical_threshold: "0.8"
+

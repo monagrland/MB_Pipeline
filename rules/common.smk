@@ -27,7 +27,6 @@ rule denoising_unoise:
 	output:
 		"07_ASVs/ASVs.fasta"
 	params:
-		options = " ".join(config["denoise_options"]),
 		alpha=config["denoise_alpha"],
 		minsize=config["denoise_minsize"],
 	conda:
@@ -38,7 +37,12 @@ rule denoising_unoise:
 	log:
 		"logs/07_ASVs/all_reads.txt"
 	shell:
-		"vsearch --threads {threads} --cluster_unoise {input} --minsize {params.minsize} --unoise_alpha {params.alpha} --centroids {output} --relabel ASV {params.options} &>>{log}"
+		"""
+		vsearch --cluster_unoise {input} \
+		--threads {threads} --sizein --sizeout --fasta_width 0 \
+		--minsize {params.minsize} --unoise_alpha {params.alpha} \
+		--centroids {output} --relabel ASV &>>{log}
+		"""
 
 rule rename_headers_for_dnoise:
 	"""Rename sequence headers for DnoisE
@@ -69,7 +73,7 @@ rule denoising_dnoise:
 		"../envs/mb_dnoise.yaml"
 	params:
 		prefix=lambda wildcards: f"07_ASVs/ASVs_{wildcards.alpha}",
-		frame=3, # TODO move to config file
+		frame=config["reading_frame_start"],
 	threads: 4
 	message:
 		"Denoising with DnoisE"
@@ -95,7 +99,7 @@ rule calc_entropy_dnoise:
 	log:
 		"{prefix}_entropy_values.log"
 	params:
-		frame=3, #TODO move to config file
+		frame=config["reading_frame_start"]
 	shell:
 		"""
 		dnoise --fasta_input {input} -g -x {params.frame} --cores {threads} --csv_output {wildcards.prefix} &> {log};
@@ -134,7 +138,7 @@ rule fasta_minsize:
 	threads: 1
 	shell:
 		"""
-		vsearch --sizein --sizeout --minsize {wildcards.minsize} --sortbysize {input} --output {output}
+		vsearch --sizein --sizeout --fasta_width 0 --minsize {wildcards.minsize} --sortbysize {input} --output {output}
 		"""
 
 rule plot_entropy_ratio_vs_minsize:
@@ -144,7 +148,11 @@ rule plot_entropy_ratio_vs_minsize:
 	default value is not suitable.
 	"""
 	input:
-		expand("07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}_entropy_values.csv", minsize=[2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100], alpha=config["denoise_alpha"])
+		expand(
+			"07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}_entropy_values.csv",
+			minsize=[2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100],
+			alpha=config["denoise_alpha"]
+		)
 	output:
 		"diagnostics/entropy_ratio_minsize_plot.png"
 	params: # TODO update script arguments
@@ -164,7 +172,7 @@ rule rename_denoised_ASVs:
 	threads: 1
 	shell:
 		"""
-		vsearch --sizein --sizeout --sortbysize {input} --output {output} --relabel ASV
+		vsearch --sizein --sizeout --fasta_width 0 --sortbysize {input} --output {output} --relabel ASV
 		"""
 
 rule remove_chimeras:

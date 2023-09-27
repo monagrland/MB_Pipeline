@@ -1,5 +1,9 @@
+# Input file paths
 directory: "/home/krueger_l/Dokumente/Metabarcoding/Metabarcoding/FRANZ_processing/demux_trnL/01_RawData"
+
+# Working folder for output
 output: "/home/krueger_l/Dokumente/Metabarcoding/trnl_TEST"
+
 paired: true
 adapter_trimming_options:
   - "-g CGAAATCGGTAGACGCTACG"
@@ -16,32 +20,24 @@ filter_options:
   - "--fastq_maxlen 800"
   - "--fastq_maxns 0"
   - "--fasta_width 0"
-derep1_options:
+derep1_options: # TODO obligatory options should be hardcoded
   - "--strand plus"
-  - "--sizeout"
-  - "--fasta_width 0"
-derep2_options:
-  - "--sizein"
   - "--sizeout"
   - "--fasta_width 0"
 
 # For protein coding sequences only
-reading_frame_start: 3
+reading_frame_start: 3 # Codon position (1, 2, or 3) of the first base
 
 # Denoising
-denoise_alpha : 5 # Update this default value after viewing diagnostics
-denoise_minsize : 8 # Update this default value after viewing diagnostics
+# Update these default values after viewing diagnostics
+denoise_alpha : 5    # Clustering parameter alpha used for Unoise or DnoisE
+denoise_minsize : 8  # Minimum sequence cluster size to retain
 
-chimera_check_options:
-  - "--sizein"
-  - "--sizeout"
-  - "--fasta_width 0"
 community_table_options:
   - "--id 0.97"
   - "--strand plus"
-  - "--threads 6"
-  - "--sizein"
-  - "--sizeout"
+
+# Taxonomic classification
 direct_dbs:
   - "/mnt/data/databases/bcd_trnl/trnl_viridiplantae_de.fa"
   - "/mnt/data/databases/bcd_trnl/trnl_viridiplantae_eu.fa"

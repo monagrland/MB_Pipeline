@@ -4,8 +4,6 @@ rule dereplicate_2:
 		"05_concatenated_data/all_reads.fasta"
 	output:
 		"06_derep_data/unique_reads.fasta"
-	params:
-		options = " ".join(config["derep2_options"])
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: workflow.cores
@@ -14,7 +12,7 @@ rule dereplicate_2:
 	log:
 		"logs/06_dereplicate/all_reads.txt"
 	shell:
-		"vsearch --threads {threads} --derep_fulllength {input} --output {output} {params.options} &>> {log}"
+		"vsearch --threads {threads} --sizein --sizeout --fasta_width 0 --derep_fulllength {input} --output {output} &>> {log}"
 
 rule denoising_unoise:
 	"""Denoise with Unoise algorithm - for non-coding sequences
@@ -172,7 +170,7 @@ rule rename_denoised_ASVs:
 	threads: 1
 	shell:
 		"""
-		vsearch --sizein --sizeout --fasta_width 0 --sortbysize {input} --output {output} --relabel ASV
+		vsearch --sizein --sizeout --fasta_width 0 --sortbysize {input} --output {output} --relabel ASV;
 		"""
 
 rule remove_chimeras:
@@ -180,8 +178,6 @@ rule remove_chimeras:
 		"07_ASVs/ASVs.fasta"
 	output:
 		"08_ASVs_nonchimeras/ASVs_nonchimeras.fasta"
-	params:
-		options = " ".join(config["chimera_check_options"])
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: workflow.cores
@@ -190,7 +186,10 @@ rule remove_chimeras:
 	log:
 		"logs/08_ASVs_nonchimeras/all_reads.txt"
 	shell:
-		"vsearch --threads {threads} -uchime3_denovo {input} --nonchimeras {output} {params.options} &>> {log}"
+		"""
+		vsearch --threads {threads} --sizein --sizeout --fasta_width 0 \
+		-uchime3_denovo {input} --nonchimeras {output} {params.options} &>> {log}"
+		"""
 
 rule generate_community_table:
 	input:
@@ -210,8 +209,9 @@ rule generate_community_table:
 		"logs/09_community_table/all_reads.txt"
 	shell:
 		"""
-		vsearch --threads {threads} --usearch_global {input.search} --db {input.db} \
-		{params.options} --otutabout {output.community_table} --biomout {output.community_table_biom} &>> {log}
+		vsearch --threads {threads} --sizein --sizeout {params.options} \
+		--usearch_global {input.search} --db {input.db} \
+		--otutabout {output.community_table} --biomout {output.community_table_biom} &>> {log}
 		"""
 
 rule taxonomy:

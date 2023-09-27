@@ -5,6 +5,9 @@ directory: "/home/krueger_l/Dokumente/Metabarcoding/Metabarcoding/FRANZ_processi
 output: "/home/krueger_l/Dokumente/Metabarcoding/trnl_TEST"
 
 paired: true
+
+protein_coding: false
+
 adapter_trimming_options:
   - "-g CGAAATCGGTAGACGCTACG"
   - "-G CCATTGAGTCTCTGCACCTATC"

@@ -47,7 +47,7 @@ rule denoising_dnoise:
 	input:
 		"06_derep_data/unique_reads_rename.fasta"
 	output:
-		denoised="07_ASVs/ASVs_{alpha}_denoised_ratio_d.fasta"
+		denoised="07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.fasta"
 	conda:
 		"../envs/mb_dnoise.yaml"
 	params:
@@ -60,12 +60,12 @@ rule denoising_dnoise:
 		"logs/denoising_dnoise.{alpha}.log"
 	shell:
 		"""
-		dnoise --fasta_input {input} --alpha {wildcards.alpha} -x {params.frame} --cores {threads} --fasta_output {params.prefix} &> {log};
+		dnoise --fasta_input {input} -y --alpha {wildcards.alpha} -x {params.frame} --cores {threads} --fasta_output {params.prefix} &> {log};
 		"""
 
 rule calc_entropy_dnoise:
 	input:
-		"07_ASVs/ASVs_{alpha}_denoised_ratio_d.fasta"
+		"07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.fasta"
 	output:
 		"07_ASVs/ASVs_{alpha}_entropy_values.csv"
 	conda:
@@ -81,6 +81,8 @@ rule calc_entropy_dnoise:
 		"""
 		dnoise --fasta_input {input} -g --cores {threads} --csv_output {params.prefix} &> {log};
 		"""
+
+# TODO Calculate entropy at different minimum abundances
 
 rule remove_chimeras:
 	input:

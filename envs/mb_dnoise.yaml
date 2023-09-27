@@ -6,3 +6,4 @@ dependencies:
   - dnoise =1.4.0
   - pandas =2.0
   - matplotlib-base =3.6.2
+  - biopython =1.80

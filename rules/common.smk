@@ -17,13 +17,19 @@ rule dereplicate_2:
 		"vsearch --threads {threads} --derep_fulllength {input} --output {output} {params.options} &>> {log}"
 
 rule denoising_unoise:
+	"""Denoise with Unoise algorithm - for non-coding sequences
+
+	Unoise algorithm as implemented in Vsearch. User can specify alpha and
+	minsize parameters in the config file.
+	"""
 	input:
 		"06_derep_data/unique_reads.fasta"
 	output:
 		"07_ASVs/ASVs.fasta"
 	params:
 		options = " ".join(config["denoise_options"]),
-		alpha=config["denoise_alpha"]
+		alpha=config["denoise_alpha"],
+		minsize=config["denoise_minsize"],
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: workflow.cores
@@ -32,10 +38,13 @@ rule denoising_unoise:
 	log:
 		"logs/07_ASVs/all_reads.txt"
 	shell:
-		"vsearch --threads {threads} --cluster_unoise {input} --unoise_alpha {params.alpha} --centroids {output} --relabel ASV {params.options} &>>{log}"
+		"vsearch --threads {threads} --cluster_unoise {input} --minsize {params.minsize} --unoise_alpha {params.alpha} --centroids {output} --relabel ASV {params.options} &>>{log}"
 
 rule rename_headers_for_dnoise:
-	# input file to dnoise can have only one ; char in Fasta headers
+	"""Rename sequence headers for DnoisE
+
+	Input file to dnoise can have only one ; char in Fasta headers
+	"""
 	input:
 		"06_derep_data/unique_reads.fasta"
 	output:
@@ -45,6 +54,13 @@ rule rename_headers_for_dnoise:
 		"sed 's/;sample/_sample/' {input} | sed 's/;ee/_ee/' > {output};"
 
 rule denoising_dnoise:
+	"""Denoise with DnoisE algorithm - for protein-coding sequences
+
+	Alpha parameter should be chosen empirically based on entropy ratio changes.
+	Pipeline is run with default alpha value; diagnostic plots also generated
+	for range of alpha values. User should then update the alpha and minsize
+	values in config file to rerun if necessary.
+	"""
 	input:
 		"06_derep_data/unique_reads_rename.fasta"
 	output:
@@ -65,27 +81,34 @@ rule denoising_dnoise:
 		"""
 
 rule calc_entropy_dnoise:
+	"""Calculate entropy ratio of 2nd and 3rd codon positions
+	"""
 	input:
-		"07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.fasta"
+		"{prefix}.fasta"
 	output:
-		"07_ASVs/ASVs_{alpha}_entropy_values.csv"
+		"{prefix}_entropy_values.csv"
 	conda:
 		"../envs/mb_dnoise.yaml"
-	params:
-		prefix=lambda wildcards: f"07_ASVs/ASVs_{wildcards.alpha}",
 	threads: 4
 	message:
 		"Calculating entropy per codon position with DnoisE"
 	log:
-		"logs/calc_entropy_dnoise.{alpha}.log"
+		"{prefix}_entropy_values.log"
+	params:
+		frame=3, #TODO move to config file
 	shell:
 		"""
-		dnoise --fasta_input {input} -g --cores {threads} --csv_output {params.prefix} &> {log};
+		dnoise --fasta_input {input} -g -x {params.frame} --cores {threads} --csv_output {wildcards.prefix} &> {log};
 		"""
 
-rule plot_entropy_ratio_denoising:
+rule plot_entropy_ratio_vs_alpha:
+	"""Plot entropy ratio for range of values of denoising parameter alpha
+
+	Generate diagnostic plot for user to choose final value of alpha, if
+	default value is not suitable.
+	"""
 	input:
-		expand("07_ASVs/ASVs_{alpha}_entropy_values.csv", alpha=[1,2,3,4,5,6,7,8,9,10])
+		expand("07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d_entropy_values.csv", alpha=[1,2,3,4,5,6,7,8,9,10])
 	output:
 		"diagnostics/entropy_ratio_denoising_plot.png"
 	params:
@@ -96,7 +119,49 @@ rule plot_entropy_ratio_denoising:
 		"../envs/mb_dnoise.yaml"
 	script: "{params.script_path}"
 
-# TODO Calculate entropy at different minimum abundances
+rule fasta_minsize:
+	"""Filter sequence clusters by minimum size based on size= key in header
+
+	Sequence header should contain '=' separated key-value pairs as expected
+	from Vsearch and DnoisE input/outputs. The key 'size' is parsed to get
+	cluster size, e.g. ">sequence_id;size=1234"
+	"""
+	input:
+		"{prefix}.fasta"
+	output:
+		"{prefix}.minsize_{minsize}.fasta"
+	conda: "../envs/mb_dnoise.yaml"
+	params:
+		script_path="../scripts/filter_minsize.py"
+	script: "{params.script_path}"
+
+rule plot_entropy_ratio_vs_minsize:
+	"""Plot entropy ratio for range of values of minimum cluster size
+
+	Generate diagnostic plot for user to choose final value of minsize, if
+	default value is not suitable.
+	"""
+	input:
+		expand("07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}_entropy_values.csv", minsize=[2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100], alpha=config["denoise_alpha"])
+	output:
+		"diagnostics/entropy_ratio_minsize_plot.png"
+	params: # TODO update script arguments
+		alphas=",".join([str(i) for i in [2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]]),
+		inputs=lambda wildcards, input: ",".join(input),
+		script_path = os.path.join(workflow.basedir, "scripts/plot_entropy_ratio.py"),
+	conda:
+		"../envs/mb_dnoise.yaml"
+	script: "{params.script_path}"
+
+# rule rename_denoised_ASVs:
+# 	input:
+# 		expand("07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}.fasta", alpha=config["denoise_alpha"], minsize=config["denoise_minsize"])
+# 	output:
+# 		"07_ASVs/ASVs_dnoise.fasta"
+# 	run:
+# 		with open(input[0], "r" as fh_in):
+# 			with open(output[0], "w" as fh_out):
+
 
 rule remove_chimeras:
 	input:

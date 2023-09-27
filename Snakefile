@@ -26,7 +26,8 @@ rule all:
 		# "12_report/multiqc_report.html",
 		# "11_merged/community_and_tax_merged.txt",
 		# "10_taxonomy/krona_plot.html",
-		"diagnostics/entropy_ratio_denoising_plot.png"
+		"diagnostics/entropy_ratio_denoising_plot.png",
+		"diagnostics/entropy_ratio_minsize_plot.png",
 
 
 rule save_config:

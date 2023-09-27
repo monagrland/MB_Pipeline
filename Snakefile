@@ -9,7 +9,6 @@ workdir : config['output']
 fw_files = glob_wildcards(config["directory"] + "/{prefix}_R1_{suffix}.gz")
 files_single = glob_wildcards(config["directory"] + "/{basename}.gz")
 
-
 if config["paired"]:
 	include:
 		"rules/paired_end.smk"
@@ -19,7 +18,6 @@ elif not config["paired"]:
 
 include: "rules/common.smk"
 
-
 rule all:
 	input:
 		# "logs/config_file.yaml",
@@ -28,6 +26,7 @@ rule all:
 		# "10_taxonomy/krona_plot.html",
 		"diagnostics/entropy_ratio_denoising_plot.png",
 		"diagnostics/entropy_ratio_minsize_plot.png",
+		"07_ASVs/ASVs_dnoise.fasta",
 
 
 rule save_config:

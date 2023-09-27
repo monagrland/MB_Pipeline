@@ -130,10 +130,12 @@ rule fasta_minsize:
 		"{prefix}.fasta"
 	output:
 		"{prefix}.minsize_{minsize}.fasta"
-	conda: "../envs/mb_dnoise.yaml"
-	params:
-		script_path="../scripts/filter_minsize.py"
-	script: "{params.script_path}"
+	conda: "../envs/mb_vsearch.yaml"
+	threads: 1
+	shell:
+		"""
+		vsearch --sizein --sizeout --minsize {wildcards.minsize} --sortbysize {input} --output {output}
+		"""
 
 rule plot_entropy_ratio_vs_minsize:
 	"""Plot entropy ratio for range of values of minimum cluster size
@@ -153,15 +155,17 @@ rule plot_entropy_ratio_vs_minsize:
 		"../envs/mb_dnoise.yaml"
 	script: "{params.script_path}"
 
-# rule rename_denoised_ASVs:
-# 	input:
-# 		expand("07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}.fasta", alpha=config["denoise_alpha"], minsize=config["denoise_minsize"])
-# 	output:
-# 		"07_ASVs/ASVs_dnoise.fasta"
-# 	run:
-# 		with open(input[0], "r" as fh_in):
-# 			with open(output[0], "w" as fh_out):
-
+rule rename_denoised_ASVs:
+	input:
+		expand("07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}.fasta", alpha=config["denoise_alpha"], minsize=config["denoise_minsize"])
+	output:
+		"07_ASVs/ASVs_dnoise.fasta"
+	conda: "../envs/mb_vsearch.yaml"
+	threads: 1
+	shell:
+		"""
+		vsearch --sizein --sizeout --sortbysize {input} --output {output} --relabel ASV
+		"""
 
 rule remove_chimeras:
 	input:

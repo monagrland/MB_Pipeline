@@ -22,11 +22,11 @@ include: "rules/common.smk"
 
 rule all:
 	input:
-		"logs/config_file.yaml",
-		"12_report/multiqc_report.html",
-		"11_merged/community_and_tax_merged.txt",
-		"10_taxonomy/krona_plot.html",
-		# expand("07_ASVs/ASVs_{alpha}_entropy_values.csv", alpha=[1,2,3,4,5,6,7,8,9,10]),
+		# "logs/config_file.yaml",
+		# "12_report/multiqc_report.html",
+		# "11_merged/community_and_tax_merged.txt",
+		# "10_taxonomy/krona_plot.html",
+		"diagnostics/entropy_ratio_denoising_plot.png"
 
 
 rule save_config:

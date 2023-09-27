@@ -22,7 +22,8 @@ rule denoising_unoise:
 	output:
 		"07_ASVs/ASVs.fasta"
 	params:
-		options = " ".join(config["denoise_options"])
+		options = " ".join(config["denoise_options"]),
+		alpha=config["denoise_alpha"]
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: workflow.cores
@@ -31,7 +32,7 @@ rule denoising_unoise:
 	log:
 		"logs/07_ASVs/all_reads.txt"
 	shell:
-		"vsearch --threads {threads} --cluster_unoise {input} --centroids {output} --relabel ASV {params.options} &>>{log}"
+		"vsearch --threads {threads} --cluster_unoise {input} --unoise_alpha {params.alpha} --centroids {output} --relabel ASV {params.options} &>>{log}"
 
 rule rename_headers_for_dnoise:
 	# input file to dnoise can have only one ; char in Fasta headers
@@ -81,6 +82,19 @@ rule calc_entropy_dnoise:
 		"""
 		dnoise --fasta_input {input} -g --cores {threads} --csv_output {params.prefix} &> {log};
 		"""
+
+rule plot_entropy_ratio_denoising:
+	input:
+		expand("07_ASVs/ASVs_{alpha}_entropy_values.csv", alpha=[1,2,3,4,5,6,7,8,9,10])
+	output:
+		"diagnostics/entropy_ratio_denoising_plot.png"
+	params:
+		alphas="1,2,3,4,5,6,7,8,9,10",
+		inputs=lambda wildcards, input: ",".join(input),
+		script_path = os.path.join(workflow.basedir, "scripts/plot_entropy_ratio.py"),
+	conda:
+		"../envs/mb_dnoise.yaml"
+	script: "{params.script_path}"
 
 # TODO Calculate entropy at different minimum abundances
 

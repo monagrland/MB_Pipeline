@@ -32,6 +32,10 @@ reading_frame_start: 3 # Codon position (1, 2, or 3) of the first base
 # Update these default values after viewing diagnostics
 denoise_alpha : 5    # Clustering parameter alpha used for Unoise or DnoisE
 denoise_minsize : 8  # Minimum sequence cluster size to retain
+alpha_range :        # Range of alpha to test for entropy ratio diagnostics
+  [1,2,3,4,5,6,7,8,9,10]
+minsize_range:       # Range of minsize to test for entropy ratio diagnostics
+  [2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]
 
 community_table_options:
   - "--id 0.97"

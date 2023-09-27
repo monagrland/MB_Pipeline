@@ -110,11 +110,11 @@ rule plot_entropy_ratio_vs_alpha:
 	default value is not suitable.
 	"""
 	input:
-		expand("07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d_entropy_values.csv", alpha=[1,2,3,4,5,6,7,8,9,10])
+		expand("07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d_entropy_values.csv", alpha=config["alpha_range"])
 	output:
 		"diagnostics/entropy_ratio_denoising_plot.png"
 	params:
-		alphas="1,2,3,4,5,6,7,8,9,10",
+		alphas=",".join([str(i) for i in config["alpha_range"]]),
 		inputs=lambda wildcards, input: ",".join(input),
 		script_path = os.path.join(workflow.basedir, "scripts/plot_entropy_ratio.py"),
 	conda:
@@ -148,13 +148,13 @@ rule plot_entropy_ratio_vs_minsize:
 	input:
 		expand(
 			"07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}_entropy_values.csv",
-			minsize=[2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100],
+			minsize=config['minsize_range'],
 			alpha=config["denoise_alpha"]
 		)
 	output:
 		"diagnostics/entropy_ratio_minsize_plot.png"
 	params: # TODO update script arguments
-		alphas=",".join([str(i) for i in [2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]]),
+		alphas=",".join([str(i) for i in config['minsize_range']]),
 		inputs=lambda wildcards, input: ",".join(input),
 		script_path = os.path.join(workflow.basedir, "scripts/plot_entropy_ratio.py"),
 	conda:

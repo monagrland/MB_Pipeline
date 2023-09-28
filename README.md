@@ -21,7 +21,8 @@ Additionally required are:
 - config file in YAML format with all required information; modify the template
   `example_config.yaml` as described below.
 
-### 1.1 Execution
+
+### 1.1 Execution and performance parameters
 
 The command to start the pipeline is really simple, because all required
 information is declared in the config file.
@@ -34,8 +35,16 @@ Snakemake itself will be installed to a Conda environment named `mb_snakemake`,
 which will be activated before running the pipeline, if this environment does
 not already exist.
 
-To delete temporary files (trimmed, merged, dereplicated reads), remove the
-option `--notemp` from the Snakemake command in `run_pipeline.sh`.
+Useful command line options in `run_pipeline.sh` to add or edit; see the
+[Snakemake documentation](https://snakemake.readthedocs.io/en/stable/executing/cli.html)
+for the complete list:
+
+* `--threads 8` - Change total number of threads available for the pipeline
+* `--dryrun` - Show rules that will be run only, do not actually execute
+* `--notemp` - Keep temporary files (trimmed, merged, dereplicated reads);
+               remove this flag to discard them after run.
+* `--conda-frontend conda` - Specify `conda` or `mamba` to manage environments
+
 
 ### 1.1 Config File Structure
 
@@ -44,7 +53,7 @@ example config file is provided: `example_config.yaml`.
 
 #### 1.1.1 Input
 
-You can specify the path to the directory containing the paired end reads at
+You can specify the path to the directory containing the sequencing reads at
 the `directory` key.
 
 ```yaml
@@ -60,13 +69,12 @@ output: /home/user/metabarcoding_results
 ```
 
 #### 1.1.3 Paired
-If paired end reads are used, be sure to specify this at the `paired` key. This
-key accepts only `true` or `false`.
+If paired end reads are used, specify this at the `paired` key. This key
+accepts only `true` or `false`.
 
 ```yaml
 paired: true
 ```
-
 
 #### 1.1.4 Adapter Trimming
 
@@ -125,23 +133,71 @@ derep1_options:
 
 #### 1.1.8 Second Dereplication
 
+#### Protein-coding sequences
+
+Protein-coding sequences can be processed differently from non-coding sequences.
+Activate the coding sequence-specific subworkflow with:
+
 ```yaml
-derep2_options:
-  - "--sizein"
-  - "--sizeout"
-  - "--fasta_width 0"
+protein_coding: true
 ```
+
+This will perform entropy-based distance denoising with
+[DnoisE](https://github.com/adriantich/DnoisE/) ([Antich et al.,
+2022](https://doi.org/10.7717/peerj.12758)) instead of Vsearch Unoise.
+
+The expected reading frame of the amplified metabarcoding fragment should be
+known, based on the PCR primers used, and denote the codon position (1, 2, or
+3) of the first base in the fragment.
+
+```yaml
+reading_frame_start: 3 # default for the Leray fragment of mtCOI
+```
+
+DnoisE can calculate the entropy ratio of codon positions 2 and 3 to help set
+values of the denoising parameter alpha and the minimum cluster size. Specify
+the range of alpha and minsize values to test:
+
+```yaml
+alpha_range: [1,2,3,4,5,6,7,8,9,10]
+minsize_range: [2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]
+```
+
+The pipeline first runs with the default alpha and minsize values (see below),
+and also produces plots of entropy ratio vs. alpha and minsize for the
+specified ranges. After reviewing the plots, the user can update the default
+values if necessary.
+
 
 #### 1.1.9 Denoising
 
+For noncoding sequences, denoising is performed with Unoise ([Edgar,
+2016](https://doi.org/10.1101/081257 )) implemented in
+[Vsearch](https://github.com/torognes/vsearch); for coding sequences, DnoisE is
+used in the protein-coding sequence subworkflow (see above).
+
+Both methods use the parameters alpha and minsize.
+
+Parameter alpha controls the tradeoff between "sensitivity to small differences
+against an increase in the number of bad sequences which are wrongly predicted
+to be good." Higher values of alpha retain more sequences (more sensitive, more
+bad sequences), whereas lower values retain fewer (less sensitive, fewer bad
+sequences).
+
 ```yaml
-denoise_options:
-  - "--sizein"
-  - "--sizeout"
-  - "--fasta_width 0"
+denoise_alpha : 5
+```
+
+Minsize is the minimum number of sequences represented by a cluster after
+denoising.
+
+```yaml
+denoise_minsize: 8
 ```
 
 #### 1.1.10 Chimera Check
+
+Chimera check with Uchime implemented in Vsearch.
 
 ```yaml
 chimera_check_options:
@@ -175,12 +231,6 @@ hierarchical_db: "/mnt/data/databases/bcd_ITS2/its2_viridiplantae_all.fa"
 ```yaml
 classification_threshold: "0.97"
 hierarchical_threshold: "0.8"
-```
-
-#### 1.1.14 Threads
-
-```yaml
-threads: 6
 ```
 
 ### 1.2 Unlocking

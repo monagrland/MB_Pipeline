@@ -19,8 +19,8 @@ elif not config["paired"]:
 include: "rules/common.smk"
 
 if config["protein_coding"]:
-	rule all: # pseudorule for non-coding sequences
-		input:
+	rule all: 
+		input: # pseudorule for protein coding sequences
 			# "logs/config_file.yaml",
 			# "12_report/multiqc_report.html",
 			# "11_merged/community_and_tax_merged.txt",
@@ -29,7 +29,7 @@ if config["protein_coding"]:
 			"diagnostics/entropy_ratio_minsize_plot.png",
 			"07_ASVs/ASVs_dnoise.fasta",
 else:
-	rule all: # pseudorule for protein coding sequences
+	rule all: # pseudorule for non-coding sequences 
 		input:
 			"logs/config_file.yaml",
 			"12_report/multiqc_report.html",

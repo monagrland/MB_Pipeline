@@ -19,6 +19,7 @@ elif not config["paired"]:
 include: "rules/common.smk"
 
 if config["protein_coding"]:
+	include: "rules/common_coding.smk"
 	rule all: 
 		input: # pseudorule for protein coding sequences
 			# "logs/config_file.yaml",

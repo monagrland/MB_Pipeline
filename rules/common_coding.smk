@@ -111,4 +111,28 @@ rule rename_denoised_ASVs:
 		vsearch --sizein --sizeout --fasta_width 0 --sortbysize {input} --output {output} --relabel ASV;
 		"""
 
+rule screen_pseudogenes:
+	"""Remove sequences that have in frame stops and/or fail HMM screen"""
+	input:
+		"07_ASVs/ASVs_dnoise.fasta"
+	output:
+		screened="08_ASVs_screened/ASVs_screened.fasta",
+		stats="08_ASVs_screened/pseudogene_screen_stats.tsv",
+		hist_hmm="08_ASVs_screened/pseudogene_screen_hist_hmm.png",
+		hist_spf="08_ASVs_screened/pseudogene_screen_hist_spf.png",
+		hist_mins="08_ASVs_screened/pseudogene_screen_hist_mins.png",
+	conda: "../envs/mb_pseudogenes.yaml"
+	log: "logs/screen_pseudogenes.log"
+	threads: 1
+	params:
+		hmm=config['protein_hmm'],
+		code=config['genetic_code'],
+	shell:
+		"""
+		pytransaln --input {input} --hmm {params.hmm} --code {params.code} \
+		stats --out_screened {output.screened} --out_hist_hmm {output.hist_hmm} \
+		--out_stats {output.stats} --out_hist_spf {output.hist_spf} \
+		--out_hist_mins {output.hist_mins} &> {log};
+		"""
+
 # vim: set noexpandtab:

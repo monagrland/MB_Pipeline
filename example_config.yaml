@@ -30,6 +30,7 @@ derep1_options: # TODO obligatory options should be hardcoded
 
 # For protein coding sequences only
 reading_frame_start: 3 # Codon position (1, 2, or 3) of the first base
+genetic_code: 5 # NCBI translation table number
 protein_hmm: null # Path to HMM of target protein sequence to screen translations
 
 # Denoising

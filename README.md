@@ -168,6 +168,16 @@ and also produces plots of entropy ratio vs. alpha and minsize for the
 specified ranges. After reviewing the plots, the user can update the default
 values if necessary.
 
+Genetic code and a HMM of the target protein should be supplied to screen
+translated sequences for pseudogenes; PCR chimeras should also be filtered out
+in this step. The approach is adapted from [Porter & Hajibabaei,
+2021](https://doi.org/10.1186/s12859-021-04180-x).
+
+```yaml
+genetic_code: 5
+protein_hmm: null # Give path to the HMM file here
+```
+
 
 #### 1.1.9 Denoising
 
@@ -218,6 +228,9 @@ community_table_options:
 ```
 
 #### 1.1.12 Databases
+
+These can be either in Fasta or UDB format (faster, as it avoids re-indexing
+every time the pipeline is run).
 
 ```yaml
 direct_dbs:

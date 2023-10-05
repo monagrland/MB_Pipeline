@@ -27,7 +27,7 @@ rule denoising_dnoise:
 		"../envs/mb_dnoise.yaml"
 	params:
 		prefix=lambda wildcards: f"07_ASVs/ASVs_{wildcards.alpha}",
-		frame=config['denoising']['dnoise_opts']["frame"],
+		frame=config['dnoise_opts']["frame"],
 	threads: 4
 	message:
 		"Denoising with DnoisE"
@@ -53,7 +53,7 @@ rule calc_entropy_dnoise:
 	log:
 		"{prefix}_entropy_values.log"
 	params:
-		frame=config["denoising"]['dnoise_opts']['frame']
+		frame=config['dnoise_opts']['frame']
 	shell:
 		"""
 		dnoise --fasta_input {input} -g -x {params.frame} --cores {threads} --csv_output {wildcards.prefix} &> {log};
@@ -66,11 +66,11 @@ rule plot_entropy_ratio_vs_alpha:
 	default value is not suitable.
 	"""
 	input:
-		expand("07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d_entropy_values.csv", alpha=config['denoising']['dnoise_opts']["alpha_range"])
+		expand("07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d_entropy_values.csv", alpha=config['dnoise_opts']["alpha_range"])
 	output:
 		"diagnostics/entropy_ratio_denoising_plot.png"
 	params:
-		alphas=",".join([str(i) for i in config['denoising']['dnoise_opts']["alpha_range"]]),
+		alphas=",".join([str(i) for i in config['dnoise_opts']["alpha_range"]]),
 		inputs=lambda wildcards, input: ",".join(input),
 		script_path = os.path.join(workflow.basedir, "scripts/plot_entropy_ratio.py"),
 	conda:
@@ -86,13 +86,13 @@ rule plot_entropy_ratio_vs_minsize:
 	input:
 		expand(
 			"07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}_entropy_values.csv",
-			minsize=config['denoising']['dnoise_opts']['minsize_range'],
+			minsize=config['dnoise_opts']['minsize_range'],
 			alpha=config["denoising"]['alpha'],
 		)
 	output:
 		"diagnostics/entropy_ratio_minsize_plot.png"
 	params: # TODO update script arguments
-		alphas=",".join([str(i) for i in config['denoising']['dnoise_opts']['minsize_range']]),
+		alphas=",".join([str(i) for i in config['dnoise_opts']['minsize_range']]),
 		inputs=lambda wildcards, input: ",".join(input),
 		script_path = os.path.join(workflow.basedir, "scripts/plot_entropy_ratio.py"),
 	conda:

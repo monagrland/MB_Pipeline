@@ -111,8 +111,8 @@ rule taxonomy:
 		ASVs = "08_ASVs_screened/ASVs_{method}.{screening}.fasta"
 	output:
 		base = "10_taxonomy/taxonomy.{method}.{screening}.txt",
-		plot = "10_taxonomy/taxonomy.{method}.{screening}.krona.txt",
-		stat_table_mqc = "10_taxonomy/stats_mqc.{method}.{screening}.csv"
+		krona = "10_taxonomy/taxonomy.{method}.{screening}.krona.txt",
+		stats_mqc = "10_taxonomy/stats_mqc.{method}.{screening}.csv"
 	wildcard_constraints:
 		method=r"[a-z]+",
 		screening=r"no_[a-z]+",
@@ -125,7 +125,7 @@ rule taxonomy:
 		"Starting Multilevel Taxonomic Classification"
 	conda:
 		"../envs/mb_taxonomy.yaml"
-	log:
+	log: # TODO how to redirect script print output?
 		"logs/10_taxonomy/taxonomy.{method}.{screening}.log"
 	script: "{params.script_path}"
 
@@ -170,7 +170,7 @@ rule generate_report:
 	input:
 		community_table = "09_community_table/community_table.{method}.{screening}.txt",
 		custom_mqc_config = os.path.join(workflow.basedir, "multiqc_config.yaml"),
-		stat_table_mqc = "10_taxonomy/stats_mqc.{method}.{screening}.csv"
+		stats_mqc = "10_taxonomy/stats_mqc.{method}.{screening}.csv"
 	output:
 		"12_report/multiqc_report.{method}.{screening}.html"
 	wildcard_constraints:
@@ -187,7 +187,7 @@ rule generate_report:
 		"logs/12_MultiQC/multiqc.{method}.{screening}.txt"
 	shell:
 		"""
-		multiqc {params.log_dir} {input.stat_table_mqc} -o {params.output_dir} \
+		multiqc {params.log_dir} {input.stats_mqc} -o {params.output_dir} \
 		--config {input.custom_mqc_config} &> {log}
 		"""
 

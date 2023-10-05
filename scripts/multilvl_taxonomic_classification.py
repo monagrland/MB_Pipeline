@@ -39,6 +39,8 @@ def arg():
         help="Sintax Cutoff for the hierarchical classification",
     )
     parser.add_argument("-o", "--output", help="Prefered name of the output file")
+    parser.add_argument("--krona", help="Path to write table to draw krona plot")
+    parser.add_argument("--stats_mqc", help="Path to write summary stats for MultiQC")
     parser.add_argument(
         "-n", "--threads", default=1, help="Number of threads to be used"
     )
@@ -458,11 +460,10 @@ def main(args):
     taxonomy_df.to_csv(output, sep="\t")
     tax_df_for_krona = taxonomy_df.drop(["ASV"], axis=1)
     tax_df_for_krona.to_csv(
-        os.path.splitext(output)[0] + ".krona.txt", sep="\t", header=False, index=False
+        args['krona'], sep="\t", header=False, index=False
     )
 
-    statistics_file_path = f"{os.path.dirname(output)}/stats_mqc.csv"
-    statistics(logfile, statistics_file_path)
+    statistics(logfile, args['stats_mqc'])
 
     if not args['keep_results']:
         out_directory = os.path.dirname(output)
@@ -481,6 +482,8 @@ if __name__ == "__main__":
             "sintax_cutoff" : snakemake.params['hierarchical_threshold'],
             "ASVs" : snakemake.input['ASVs'],
             "output" : snakemake.output['base'],
+            "krona" : snakemake.output['krona'],
+            "stats_mqc" : snakemake.output['stats_mqc'],
             "threads" : snakemake.threads,
             "log" : snakemake.log[0],
         }

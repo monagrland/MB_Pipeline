@@ -20,24 +20,18 @@ include: "rules/common.smk"
 
 if config["protein_coding"]:
 	include: "rules/common_coding.smk"
-	rule all: 
-		input: # pseudorule for protein coding sequences
-			"logs/config_file.yaml",
-			# "12_report/multiqc_report.html",
-			# "11_merged/community_and_tax_merged.txt",
-			# "10_taxonomy/krona_plot.html",
-			# "diagnostics/entropy_ratio_denoising_plot.png",
-			# "diagnostics/entropy_ratio_minsize_plot.png",
-			# "08_ASVs_screened/ASVs_dnoise.no_pseudogenes.fasta",
-			"08_ASVs_screened/ASVs_unoise.no_pseudogenes.fasta",
+	screening="no_pseudogenes"
 else:
-	rule all: # pseudorule for non-coding sequences 
-		input:
-			# "logs/config_file.yaml",
-			# "12_report/multiqc_report.html",
-			# "11_merged/community_and_tax_merged.txt",
-			# "10_taxonomy/krona_plot.html",
-			"08_ASVs_screened/ASVs_unoise.no_chimeras.fasta"
+	screening="no_chimeras"
+
+rule all:
+	input: # pseudorule for protein coding sequences
+		"logs/config_file.yaml",
+		# "12_report/multiqc_report.html",
+		# "11_merged/community_and_tax_merged.txt",
+		# "10_taxonomy/krona_plot.html",
+		# expand("08_ASVs_screened/ASVs_{method}.no_pseudogenes.fasta", method=config['denoising']['method'])
+		expand("10_taxonomy/krona_plot.{method}.no_pseudogenes.html", method=config['denoising']['method'])
 
 rule save_config:
 	""" Rule to save the config file in the logs directory """

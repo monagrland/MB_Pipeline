@@ -6,4 +6,4 @@ dependencies:
   - mafft
   - pip # TODO bioconda recipe for pytransaln so dependencies are explicitly specified
   - pip:
-    - git+https://github.com/monagrland/pytransaln@c443efd
+    - pytransaln==0.2.0

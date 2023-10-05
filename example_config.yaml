@@ -1,8 +1,7 @@
-# Input file paths
-directory: "/home/krueger_l/Dokumente/Metabarcoding/Metabarcoding/FRANZ_processing/demux_trnL/01_RawData"
-
-# Working folder for output
-output: "/home/krueger_l/Dokumente/Metabarcoding/trnl_TEST"
+directory: # Input file paths
+  "/home/krueger_l/Dokumente/Metabarcoding/Metabarcoding/FRANZ_processing/demux_trnL/01_RawData"
+output: # Working folder for output
+  "/home/krueger_l/Dokumente/Metabarcoding/trnl_TEST"
 
 paired: true
 
@@ -28,19 +27,22 @@ derep1_options: # TODO obligatory options should be hardcoded
   - "--sizeout"
   - "--fasta_width 0"
 
-# For protein coding sequences only
-reading_frame_start: 3 # Codon position (1, 2, or 3) of the first base
-genetic_code: 5 # NCBI translation table number
-protein_hmm: null # Path to HMM of target protein sequence to screen translations
+# Coding sequences
+coding:
+  code: 5 # NCBI translation table number
+  hmm: null # Path to HMM of target protein sequence to screen translations
 
-# Denoising
-# Update these default values after viewing diagnostics
-denoise_alpha : 5    # Clustering parameter alpha used for Unoise or DnoisE
-denoise_minsize : 8  # Minimum sequence cluster size to retain
-alpha_range :        # Range of alpha to test for entropy ratio diagnostics
-  [1,2,3,4,5,6,7,8,9,10]
-minsize_range:       # Range of minsize to test for entropy ratio diagnostics
-  [2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]
+# Denoising - Update these default values after viewing diagnostics
+denoising:
+  alpha : 5    # Clustering parameter alpha used for Unoise or DnoisE
+  minsize : 8  # Minimum sequence cluster size to retain
+  method: 'dnoise' # either "unoise" or "dnoise"
+  dnoise_opts:
+    frame: 3 # Codon position (1, 2, or 3) of the first base
+    alpha_range :        # Range of alpha to test for entropy ratio diagnostics
+      [1,2,3,4,5,6,7,8,9,10]
+    minsize_range:       # Range of minsize to test for entropy ratio diagnostics
+      [2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]
 
 community_table_options:
   - "--id 0.97"

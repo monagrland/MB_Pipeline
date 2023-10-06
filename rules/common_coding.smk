@@ -32,7 +32,7 @@ rule denoising_dnoise:
 	message:
 		"Denoising with DnoisE"
 	log:
-		"logs/denoising_dnoise.{alpha}.log"
+		"logs/07_ASVs/denoising_dnoise.{alpha}.log"
 	shell:
 		"""
 		dnoise --fasta_input {input} -y --alpha {wildcards.alpha} -x {params.frame} --cores {threads} --fasta_output {params.prefix} &> {log};
@@ -105,10 +105,11 @@ rule rename_denoised_ASVs:
 	output:
 		"07_ASVs/ASVs_dnoise.fasta"
 	conda: "../envs/mb_vsearch.yaml"
+	log: "logs/07_ASVs/rename_denoise_ASVs.{alpha}.{minsize}.log"
 	threads: 1
 	shell:
 		"""
-		vsearch --sizein --sizeout --fasta_width 0 --sortbysize {input} --output {output} --relabel ASV;
+		vsearch --sizein --sizeout --fasta_width 0 --sortbysize {input} --output {output} --relabel ASV &> {log};
 		"""
 
 rule screen_pseudogenes:
@@ -124,7 +125,7 @@ rule screen_pseudogenes:
 	wildcard_constraints:
 		method=r"[a-z]+"
 	conda: "../envs/mb_pseudogenes.yaml"
-	log: "logs/screen_pseudogenes.{method}.log"
+	log: "logs/07_ASVs/screen_pseudogenes.{method}.log"
 	threads: 1
 	params:
 		hmm=config['coding']['hmm'],

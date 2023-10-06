@@ -10,7 +10,7 @@ rule dereplicate_2:
 	message:
 		"Removing redundant reads for all reads"
 	log:
-		"logs/06_dereplicate/all_reads.txt"
+		"logs/06_derep_data/dereplicate_2.log"
 	shell:
 		"vsearch --threads {threads} --sizein --sizeout --fasta_width 0 --derep_fulllength {input} --output {output} &>> {log}"
 
@@ -33,7 +33,7 @@ rule denoising_unoise:
 	message:
 		"Generating ASVs with vsearch cluster_unoise"
 	log:
-		"logs/07_ASVs/all_reads.txt"
+		"logs/07_ASVs/denoising_unoise.log"
 	shell:
 		"""
 		vsearch --cluster_unoise {input} \
@@ -55,9 +55,10 @@ rule fasta_minsize:
 		"{prefix}.minsize_{minsize}.fasta"
 	conda: "../envs/mb_vsearch.yaml"
 	threads: 1
+	log: "logs/{prefix}.fasta_minsize.{minsize}.log"
 	shell:
 		"""
-		vsearch --sizein --sizeout --fasta_width 0 --minsize {wildcards.minsize} --sortbysize {input} --output {output}
+		vsearch --sizein --sizeout --fasta_width 0 --minsize {wildcards.minsize} --sortbysize {input} --output {output} &> log;
 		"""
 
 rule remove_chimeras:
@@ -73,7 +74,7 @@ rule remove_chimeras:
 	message:
 		"Removing Chimeras"
 	log:
-		"logs/08_ASVs_screened/remove_chimeras.{method}.txt"
+		"logs/08_ASVs_screened/remove_chimeras.{method}.log"
 	shell:
 		"""
 		vsearch --threads {threads} --sizein --sizeout --fasta_width 0 \
@@ -98,7 +99,7 @@ rule generate_community_table:
 	message:
 		"Generating community table"
 	log:
-		"logs/09_community_table/generate_community_table.{method}.{screening}.txt"
+		"logs/09_community_table/generate_community_table.{method}.{screening}.log"
 	shell:
 		"""
 		vsearch --threads {threads} --sizein --sizeout {params.options} \
@@ -184,7 +185,7 @@ rule generate_report:
 	message:
 		"Generating MultiQC report"
 	log:
-		"logs/12_MultiQC/multiqc.{method}.{screening}.txt"
+		"logs/12_report/generate_report.{method}.{screening}.log"
 	shell:
 		"""
 		multiqc {params.log_dir} {input.stats_mqc} -o {params.output_dir} \

@@ -1,7 +1,7 @@
 rule cutadapt:
 	""" Rule to remove the Adapter Sequences from the reads """
 	input:
-		input_fw = os.path.join(config["directory"], "{basename}.gz"),
+		input_fw = os.path.join(config["input"], "{basename}.gz"),
 	output:
 		temp(output_fw = "01_trimmed_data/{basename}.gz"),
 	params:

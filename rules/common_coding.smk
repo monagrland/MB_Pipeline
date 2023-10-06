@@ -27,7 +27,7 @@ rule denoising_dnoise:
 		"../envs/mb_dnoise.yaml"
 	params:
 		prefix=lambda wildcards: f"07_ASVs/ASVs_{wildcards.alpha}",
-		frame=config['dnoise_opts']["frame"],
+		frame=config['coding']["frame"],
 	threads: 4
 	message:
 		"Denoising with DnoisE"
@@ -53,7 +53,7 @@ rule calc_entropy_dnoise:
 	log:
 		"{prefix}_entropy_values.log"
 	params:
-		frame=config['dnoise_opts']['frame']
+		frame=config['coding']['frame']
 	shell:
 		"""
 		dnoise --fasta_input {input} -g -x {params.frame} --cores {threads} --csv_output {wildcards.prefix} &> {log};

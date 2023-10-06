@@ -5,9 +5,9 @@ import csv
 import gzip
 import yaml
 
-workdir : config['output']
-fw_files = glob_wildcards(config["directory"] + "/{prefix}_R1_{suffix}.gz")
-files_single = glob_wildcards(config["directory"] + "/{basename}.gz")
+workdir : config['workdir']
+fw_files = glob_wildcards(config["input"] + "/{prefix}_R1_{suffix}.gz")
+files_single = glob_wildcards(config["input"] + "/{basename}.gz")
 
 if config["paired"]:
 	include:

@@ -1,8 +1,8 @@
 rule cutadapt:
 	""" Rule to remove the Adapter Sequences from the reads """
 	input:
-		input_fw = os.path.join(config["directory"], "{prefix}_R1_{suffix}.gz"),
-		input_rv = os.path.join(config["directory"], "{prefix}_R2_{suffix}.gz")
+		input_fw = os.path.join(config["input"], "{prefix}_R1_{suffix}.gz"),
+		input_rv = os.path.join(config["input"], "{prefix}_R2_{suffix}.gz")
 	output:
 		output_fw = temp("01_trimmed_data/{prefix}_R1_{suffix}.gz"),
 		output_rv = temp("01_trimmed_data/{prefix}_R2_{suffix}.gz")

@@ -1,9 +1,9 @@
-output: # Path to working folder
+workdir: # Path to working folder
   "test"
-directory: # Folder with input files - path is relative to workdir
+input:   # Folder with input files - path is relative to workdir
   "input"
 paired: true           # true or false only
-protein_coding: true  # true or false only
+protein_coding: true   # true or false only
 
 adapter_trimming_options:
   - "-g CCNGAYATRGCNTTTYCCNCG"
@@ -25,11 +25,13 @@ derep1_options: # TODO obligatory options should be hardcoded
   - "--sizeout"
   - "--fasta_width 0"
 
-# Coding sequences
+# Coding sequences only
 coding:
   code: 5   # NCBI translation table number
-  hmm:      # HMM of target protein sequence to screen translations, path relative to workdir
+  frame: 3  # Expected codon position (1, 2, or 3) of the first base
+  hmm:      # HMM to screen translations, path relative to workdir
     "db/bold_arthropod.hmm"
+
 # Denoising - Update these default values after viewing diagnostics
 denoising:
   alpha : 5        # Clustering parameter alpha used for Unoise or DnoisE
@@ -38,7 +40,6 @@ denoising:
 
 # Options for DnoisE
 dnoise_opts:
-  frame: 3         # Codon position (1, 2, or 3) of the first base
   alpha_range :    # Range of alpha to test for entropy ratio diagnostics
     [1,5,10]
   minsize_range:   # Range of minsize to test for entropy ratio diagnostics

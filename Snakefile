@@ -17,9 +17,9 @@ elif not config["paired"]:
 		"rules/single_end.smk"
 
 include: "rules/common.smk"
+include: "rules/common_coding.smk"
 
 if config["protein_coding"]:
-	include: "rules/common_coding.smk"
 	screening="no_pseudogenes"
 else:
 	screening="no_chimeras"
@@ -31,7 +31,7 @@ rule all:
 		# "11_merged/community_and_tax_merged.txt",
 		# "10_taxonomy/krona_plot.html",
 		# expand("08_ASVs_screened/ASVs_{method}.no_pseudogenes.fasta", method=config['denoising']['method'])
-		expand("10_taxonomy/krona_plot.{method}.no_pseudogenes.html", method=config['denoising']['method'])
+		expand("10_taxonomy/krona_plot.{method}.{screening}.html", method=config['denoising']['method'], screening=screening)
 
 rule save_config:
 	""" Rule to save the config file in the logs directory """

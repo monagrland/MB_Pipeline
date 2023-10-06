@@ -1,15 +1,13 @@
-directory: # Input file paths
-  "/home/krueger_l/Dokumente/Metabarcoding/Metabarcoding/FRANZ_processing/demux_trnL/01_RawData"
-output: # Working folder for output
-  "/home/krueger_l/Dokumente/Metabarcoding/trnl_TEST"
-
+output: # Path to working folder
+  "test"
+directory: # Folder with input files - path is relative to workdir
+  "input"
 paired: true           # true or false only
-
-protein_coding: false  # true or false only
+protein_coding: true  # true or false only
 
 adapter_trimming_options:
-  - "-g CGAAATCGGTAGACGCTACG"
-  - "-G CCATTGAGTCTCTGCACCTATC"
+  - "-g CCNGAYATRGCNTTTYCCNCG"
+  - "-G TANACYTCNGGRTGNCCRAARAAYCA"
   - "-O 23"
 merge_options:
   - "--fastq_allowmergestagger"
@@ -30,31 +28,31 @@ derep1_options: # TODO obligatory options should be hardcoded
 # Coding sequences
 coding:
   code: 5   # NCBI translation table number
-  hmm: null # Path to HMM of target protein sequence to screen translations
-
+  hmm:      # HMM of target protein sequence to screen translations, path relative to workdir
+    "db/bold_arthropod.hmm"
 # Denoising - Update these default values after viewing diagnostics
 denoising:
   alpha : 5        # Clustering parameter alpha used for Unoise or DnoisE
   minsize : 8      # Minimum sequence cluster size to retain
-  method: 'unoise' # either "unoise" or "dnoise"
+  method: 'dnoise' # either "unoise" or "dnoise"
 
 # Options for DnoisE
 dnoise_opts:
   frame: 3         # Codon position (1, 2, or 3) of the first base
   alpha_range :    # Range of alpha to test for entropy ratio diagnostics
-    [1,2,5,8,10]
+    [1,5,10]
   minsize_range:   # Range of minsize to test for entropy ratio diagnostics
-    [2,5,8,10,20,50,80,100]
+    [2,10]
 
 community_table_options:
   - "--id 0.97"
   - "--strand plus"
 
 # Taxonomic classification
-direct_dbs:
-  - "/mnt/data/databases/bcd_trnl/trnl_viridiplantae_de.fa"
-  - "/mnt/data/databases/bcd_trnl/trnl_viridiplantae_eu.fa"
-hierarchical_db: "/mnt/data/databases/bcd_trnl/trnl_viridiplantae_all.fa"
-classification_threshold: "0.97"
+direct_dbs: # Path is relative to workdir
+  - "db/bold_coi-5p_test.fasta"
+hierarchical_db:
+  "db/bold_coi-5p_test.fasta"
+classification_threshold: "0.90"
 hierarchical_threshold: "0.8"
 

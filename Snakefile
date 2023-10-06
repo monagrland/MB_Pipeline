@@ -25,13 +25,11 @@ else:
 	screening="no_chimeras"
 
 rule all:
-	input: # pseudorule for protein coding sequences
+	input:
 		"logs/config_file.yaml",
-		# "12_report/multiqc_report.html",
-		# "11_merged/community_and_tax_merged.txt",
-		# "10_taxonomy/krona_plot.html",
-		# expand("08_ASVs_screened/ASVs_{method}.no_pseudogenes.fasta", method=config['denoising']['method'])
-		expand("10_taxonomy/krona_plot.{method}.{screening}.html", method=config['denoising']['method'], screening=screening)
+		expand("10_taxonomy/krona_plot.{method}.{screening}.html", method=config['denoising']['method'], screening=screening),
+		expand("11_merged/community_and_tax_merged.{method}.{screening}.txt", method=config['denoising']['method'], screening=screening),
+		expand("12_report/multiqc_report.{method}.{screening}.html", method=config['denoising']['method'], screening=screening),
 
 rule save_config:
 	""" Rule to save the config file in the logs directory """

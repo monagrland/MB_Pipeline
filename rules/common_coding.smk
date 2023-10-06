@@ -105,7 +105,7 @@ rule rename_denoised_ASVs:
 	output:
 		"07_ASVs/ASVs_dnoise.fasta"
 	conda: "../envs/mb_vsearch.yaml"
-	log: "logs/07_ASVs/rename_denoise_ASVs.{alpha}.{minsize}.log"
+	log: "logs/07_ASVs/rename_denoise_ASVs.log"
 	threads: 1
 	shell:
 		"""

@@ -1,3 +1,7 @@
+wildcard_constraints:
+		method=r"[a-z]+",
+		screening=r"no_[a-z]+"
+
 rule dereplicate_2:
 	""" Remove the duplicates inside the single file """
 	input:
@@ -68,8 +72,6 @@ rule remove_chimeras:
 		"08_ASVs_screened/ASVs_{method}.no_chimeras.fasta"
 	conda:
 		"../envs/mb_vsearch.yaml"
-	wildcard_constraints:
-		method=r"[a-z]+"
 	threads: workflow.cores
 	message:
 		"Removing Chimeras"
@@ -88,9 +90,6 @@ rule generate_community_table:
 	output:
 		community_table = "09_community_table/community_table.{method}.{screening}.txt",
 		community_table_biom = "09_community_table/community_table.{method}.{screening}.biom",
-	wildcard_constraints:
-		method=r"[a-z]+",
-		screening=r"no_[a-z]+",
 	params:
 		options = " ".join(config["community_table_options"]),
 	conda:
@@ -114,9 +113,6 @@ rule taxonomy:
 		base = "10_taxonomy/taxonomy.{method}.{screening}.txt",
 		krona = "10_taxonomy/taxonomy.{method}.{screening}.krona.txt",
 		stats_mqc = "10_taxonomy/stats_mqc.{method}.{screening}.csv"
-	wildcard_constraints:
-		method=r"[a-z]+",
-		screening=r"no_[a-z]+",
 	params:
 		keep_results = True,
 		hierarchical_threshold = config["hierarchical_threshold"],
@@ -135,9 +131,6 @@ rule krona:
 		"10_taxonomy/taxonomy.{method}.{screening}.krona.txt"
 	output:
 		"10_taxonomy/krona_plot.{method}.{screening}.html"
-	wildcard_constraints:
-		method=r"[a-z]+",
-		screening=r"no_[a-z]+",
 	conda:
 		"../envs/mb_krona.yaml"
 	message:
@@ -151,9 +144,6 @@ rule merge_tables:
 		tax_table = "10_taxonomy/taxonomy.{method}.{screening}.txt",
 	output:
 		merged_table = "11_merged/community_and_tax_merged.{method}.{screening}.txt"
-	wildcard_constraints:
-		method=r"[a-z]+",
-		screening=r"no_[a-z]+",
 	message:
 		"Merging community and taxonomy Tables"
 	run:
@@ -174,13 +164,11 @@ rule generate_report:
 		stats_mqc = "10_taxonomy/stats_mqc.{method}.{screening}.csv"
 	output:
 		"12_report/multiqc_report.{method}.{screening}.html"
-	wildcard_constraints:
-		method=r"[a-z]+",
-		screening=r"no_[a-z]+",
 	conda:
 		"../envs/mb_multiqc.yaml"
 	params:
-		output_dir = "12_report/",
+		output_dir = lambda wildcards, output: os.path.dirname(output[0]),
+		output_fn = lambda wildcards, output: os.path.basename(output[0]),
 		log_dir = "logs"
 	message:
 		"Generating MultiQC report"
@@ -188,7 +176,8 @@ rule generate_report:
 		"logs/12_report/generate_report.{method}.{screening}.log"
 	shell:
 		"""
-		multiqc {params.log_dir} {input.stats_mqc} -o {params.output_dir} \
+		multiqc {params.log_dir} {input.stats_mqc} \
+		-n {params.output_fn} -o {params.output_dir} \
 		--config {input.custom_mqc_config} &> {log}
 		"""
 

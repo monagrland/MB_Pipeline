@@ -154,8 +154,20 @@ rule iqtree_screened_asvs:
 	threads: 8
 	shell:
 		"""
-		iqtree -s {input} -m TEST -B 1000 --prefix {params.prefix} -T {threads} &>> {log}
+		iqtree -s {input} -m TEST -B 1000 --prefix {params.prefix} -redo -T {threads} &>> {log}
 		"""
+
+rule faiths_pd:
+	input:
+		tree = "13_phylogeny/ASVs_{method}.{screening}.treefile",
+		biom = "09_community_table/community_table.{method}.{screening}.biom",
+	output:
+		"13_phylogeny/ASVs_{method}.{screening}.faiths_pd.tsv"
+	conda: "../envs/mb_phylogeny.yaml"
+	params:
+		script_path = os.path.join(workflow.basedir, "scripts/faiths_pd.py")
+	script: "{params.script_path}"
+
 
 rule taxonomy:
 	"""Assign taxonomy to ASVs with two-step taxonomic classification method"""

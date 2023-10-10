@@ -109,7 +109,7 @@ rule generate_community_table:
 		"Generating community table"
 	log:
 		"logs/09_community_table/generate_community_table.{method}.{screening}.log"
-	shell:
+	shell: # --sizeout doesn't have effect here; size= doesn't appear in the otutab or biom files
 		"""
 		vsearch --usearch_global {input.search} --db {input.db} \
 		--otutabout {output.community_table} --biomout {output.community_table_biom} \

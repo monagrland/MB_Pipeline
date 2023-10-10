@@ -1,5 +1,5 @@
 rule cutadapt:
-	""" Rule to remove the Adapter Sequences from the reads """
+	"""Remove the Adapter Sequences from the reads"""
 	input:
 		input_fw = os.path.join(config["input"], "{prefix}_R1_{suffix}.gz"),
 		input_rv = os.path.join(config["input"], "{prefix}_R2_{suffix}.gz")
@@ -19,12 +19,12 @@ rule cutadapt:
 		"logs/01_cutadapt/{prefix}_{suffix}.txt"
 	shell:
 		"""
-		cutadapt --cores {threads} {params.options} -o {output.output_fw} -p {output.output_rv} \
-		{input.input_fw} {input.input_rv} &>>  {log}
+		cutadapt --cores {threads} {params.options} -o {output.output_fw} \
+		-p {output.output_rv} {input.input_fw} {input.input_rv} &>>  {log}
 		"""
 
 rule merge:
-	""" Rule to merge paired end reads to a single file"""
+	"""Merge paired end reads to a single file"""
 	input:
 		input_fw = "01_trimmed_data/{prefix}_R1_{suffix}.gz",
 		input_rv = "01_trimmed_data/{prefix}_R2_{suffix}.gz"
@@ -44,14 +44,13 @@ rule merge:
 		"logs/02_merging/{prefix}_{suffix}.txt"
 	shell:
 		"""
-		vsearch --threads {threads} \
-		--fastq_mergepairs {input.input_fw} --reverse {input.input_rv} \
+		vsearch --fastq_mergepairs {input.input_fw} --reverse {input.input_rv} \
 		--fastqout {output} {params.options} --relabel {params.basename}_ \
-		--label_suffix \;sample={params.basename} &>> {log}
+		--label_suffix \;sample={params.basename} --threads {threads} &>> {log}
 		"""
 
 rule quality_filter:
-	""" Rule for quality filtering """
+	"""Filter reads by quality scores"""
 	input:
 		"02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq"
 	output:
@@ -66,10 +65,10 @@ rule quality_filter:
 	log:
 		"logs/03_quality_filtering/{prefix}_{suffix}.txt"
 	shell:
-		"vsearch --threads {threads} --fastq_filter {input} {params.options} --fastaout {output} &>> {log}"
+		"vsearch --fastq_filter {input} {params.options} --fastaout {output} --threads {threads} &>> {log}"
 
 rule dereplicate:
-	""" Rule to remove duplicates """
+	"""Remove duplicates in each read file"""
 	input:
 		"03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"
 	output:
@@ -88,7 +87,7 @@ rule dereplicate:
 		"vsearch --threads {threads} --derep_fulllength {input} --output {output} {params.options} &>> {log}"
 
 rule concatenate:
-	""" Rule to concatenate all files into one """
+	"""Concatenate all reads into single file"""
 	input:
 		expand(
 			"04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta",

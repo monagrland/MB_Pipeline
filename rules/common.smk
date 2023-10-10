@@ -3,7 +3,7 @@ wildcard_constraints:
 		screening=r"no_[a-z]+"
 
 rule dereplicate_2:
-	""" Remove the duplicates inside the single file """
+	"""Remove exact duplicates in concatenated reads"""
 	input:
 		"05_concatenated_data/all_reads.fasta"
 	output:
@@ -16,12 +16,15 @@ rule dereplicate_2:
 	log:
 		"logs/06_derep_data/dereplicate_2.log"
 	shell:
-		"vsearch --threads {threads} --sizein --sizeout --fasta_width 0 --derep_fulllength {input} --output {output} &>> {log}"
+		"""
+		vsearch --derep_fulllength {input} --output {output} \
+		--threads {threads} --sizein --sizeout --fasta_width 0 &>> {log}
+		"""
 
 rule denoising_unoise:
-	"""Denoise with Unoise algorithm - for non-coding sequences
+	"""Denoise with UNOISE algorithm - for non-coding sequences
 
-	Unoise algorithm as implemented in Vsearch. User can specify alpha and
+	UNOISE algorithm as implemented in VSEARCH. User can specify alpha and
 	minsize parameters in the config file.
 	"""
 	input:
@@ -40,17 +43,16 @@ rule denoising_unoise:
 		"logs/07_ASVs/denoising_unoise.log"
 	shell:
 		"""
-		vsearch --cluster_unoise {input} \
-		--threads {threads} --sizein --sizeout --fasta_width 0 \
+		vsearch --cluster_unoise {input} --centroids {output} --relabel ASV \
 		--minsize {params.minsize} --unoise_alpha {params.alpha} \
-		--centroids {output} --relabel ASV &>>{log}
+		--threads {threads} --sizein --sizeout --fasta_width 0 &>>{log}
 		"""
 
 rule fasta_minsize:
 	"""Filter sequence clusters by minimum size based on size= key in header
 
 	Sequence header should contain '=' separated key-value pairs as expected
-	from Vsearch and DnoisE input/outputs. The key 'size' is parsed to get
+	from VSEARCH and DnoisE input/outputs. The key 'size' is parsed to get
 	cluster size, e.g. ">sequence_id;size=1234"
 	"""
 	input:
@@ -62,10 +64,17 @@ rule fasta_minsize:
 	log: "logs/{prefix}.fasta_minsize.{minsize}.log"
 	shell:
 		"""
-		vsearch --sizein --sizeout --fasta_width 0 --minsize {wildcards.minsize} --sortbysize {input} --output {output} &> log;
+		vsearch --minsize {wildcards.minsize} --sortbysize {input} --output {output} \
+		--sizein --sizeout --fasta_width 0 &>> log;
 		"""
 
 rule remove_chimeras:
+	"""Remove chimeras with UCHIME algorithm
+
+	De-novo UNOISE algorithm as implemented in VSEARCH removes PCR chimera
+	artefacts. If input sequences are protein-coding, the alternative
+	pseudogene removal and HMM screening step should also remove PCR chimeras.
+	"""
 	input:
 		"07_ASVs/ASVs_{method}.fasta"
 	output:
@@ -79,11 +88,12 @@ rule remove_chimeras:
 		"logs/08_ASVs_screened/remove_chimeras.{method}.log"
 	shell:
 		"""
-		vsearch --threads {threads} --sizein --sizeout --fasta_width 0 \
-		-uchime3_denovo {input} --nonchimeras {output} &>> {log}
+		vsearch -uchime3_denovo {input} --nonchimeras {output} \
+		--threads {threads} --sizein --sizeout --fasta_width 0 &>> {log}
 		"""
 
 rule generate_community_table:
+	"""Map reads to ASVs and generate counts per ASV per sample"""
 	input:
 		search = "05_concatenated_data/all_reads.fasta",
 		db = "08_ASVs_screened/ASVs_{method}.{screening}.fasta"
@@ -101,12 +111,13 @@ rule generate_community_table:
 		"logs/09_community_table/generate_community_table.{method}.{screening}.log"
 	shell:
 		"""
-		vsearch --threads {threads} --sizein --sizeout {params.options} \
-		--usearch_global {input.search} --db {input.db} \
-		--otutabout {output.community_table} --biomout {output.community_table_biom} &>> {log}
+		vsearch --usearch_global {input.search} --db {input.db} \
+		--otutabout {output.community_table} --biomout {output.community_table_biom} \
+		--threads {threads} --sizein --sizeout {params.options} &>> {log}
 		"""
 
 rule taxonomy:
+	"""Assign taxonomy to ASVs with two-step taxonomic classification method"""
 	input:
 		ASVs = "08_ASVs_screened/ASVs_{method}.{screening}.fasta"
 	output:
@@ -127,6 +138,7 @@ rule taxonomy:
 	script: "{params.script_path}"
 
 rule krona:
+	"""Render Krona plot of the taxonomic summary"""
 	input:
 		"10_taxonomy/taxonomy.{method}.{screening}.krona.txt"
 	output:
@@ -139,6 +151,7 @@ rule krona:
 		"ktImportText -q {input} -o {output}"
 
 rule merge_tables:
+	"""Combine ASV counts per sample with taxonomy"""
 	input:
 		community_table = "09_community_table/community_table.{method}.{screening}.txt",
 		tax_table = "10_taxonomy/taxonomy.{method}.{screening}.txt",
@@ -176,9 +189,8 @@ rule generate_report:
 		"logs/12_report/generate_report.{method}.{screening}.log"
 	shell:
 		"""
-		multiqc {params.log_dir} {input.stats_mqc} \
-		-n {params.output_fn} -o {params.output_dir} \
-		--config {input.custom_mqc_config} &> {log}
+		multiqc {input.stats_mqc} -n {params.output_fn} -o {params.output_dir} \
+		--config {input.custom_mqc_config} {params.log_dir} --force &> {log}
 		"""
 
 # vim: set noexpandtab:

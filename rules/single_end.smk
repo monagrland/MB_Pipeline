@@ -1,5 +1,5 @@
 rule cutadapt:
-	""" Rule to remove the Adapter Sequences from the reads """
+	"""Remove the Adapter Sequences from the reads"""
 	input:
 		input_fw = os.path.join(config["input"], "{basename}.gz"),
 	output:
@@ -21,7 +21,7 @@ rule cutadapt:
 		"""
 
 rule relabel:
-	""" Rule for relabeling of the fastq headers """
+	"""Relabel fastq headers"""
 	input:
 		"01_trimmed_data/{basename}.gz",
 	output:
@@ -37,7 +37,7 @@ rule relabel:
 		"""
 
 rule quality_filter_single:
-	""" Rule for quality filtering """
+	"""Filter reads by quality scores"""
 	input:
 		"02_relabeled/{basename}"
 	output:
@@ -53,11 +53,12 @@ rule quality_filter_single:
 		"logs/03_quality_filtering/{basename}.txt"
 	shell:
 		"""
-		vsearch --threads {threads} --fastq_filter {input} {params.options} --fastaout {output} &>> {log}
+		vsearch --fastq_filter {input} {params.options} --fastaout {output} \
+		--threads {threads} &>> {log}
 		"""
 
 rule dereplicate:
-	""" Rule to remove duplicates and relabel the samples"""
+	"""Remove duplicates and relabel the samples"""
 	input:
 		"03_filtered_data/{basename}.fasta"
 	output:
@@ -73,10 +74,13 @@ rule dereplicate:
 	log:
 		"logs/04_dereplicate/{basename}.txt"
 	shell:
-		"vsearch --threads {threads} --derep_fulllength {input} --output {output} {params.options} &>> {log}"
+		"""
+		vsearch --derep_fulllength {input} --output {output} {params.options} \
+		--threads {threads} &>> {log}
+		"""
 
 rule concatenate:
-	""" Rule to concatenate all files into one """
+	"""Concatenate all reads into single file"""
 	input:
 		expand(
 			"04_derep_data/{basename}.fasta",

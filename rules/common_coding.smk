@@ -35,7 +35,8 @@ rule denoising_dnoise:
 		"logs/07_ASVs/denoising_dnoise.{alpha}.log"
 	shell:
 		"""
-		dnoise --fasta_input {input} -y --alpha {wildcards.alpha} -x {params.frame} --cores {threads} --fasta_output {params.prefix} &> {log};
+		dnoise --fasta_input {input} -y --alpha {wildcards.alpha} \
+		-x {params.frame} --cores {threads} --fasta_output {params.prefix} &> {log};
 		"""
 
 rule calc_entropy_dnoise:
@@ -56,7 +57,8 @@ rule calc_entropy_dnoise:
 		frame=config['coding']['frame']
 	shell:
 		"""
-		dnoise --fasta_input {input} -g -x {params.frame} --cores {threads} --csv_output {wildcards.prefix} &> {log};
+		dnoise --fasta_input {input} -g -x {params.frame} \
+		--cores {threads} --csv_output {wildcards.prefix} &> {log};
 		"""
 
 rule plot_entropy_ratio_vs_alpha:
@@ -66,7 +68,10 @@ rule plot_entropy_ratio_vs_alpha:
 	default value is not suitable.
 	"""
 	input:
-		expand("07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d_entropy_values.csv", alpha=config['dnoise_opts']["alpha_range"])
+		expand(
+			"07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d_entropy_values.csv",
+			alpha=config['dnoise_opts']["alpha_range"]
+		)
 	output:
 		"diagnostics/entropy_ratio_denoising_plot.png"
 	params:
@@ -101,7 +106,11 @@ rule plot_entropy_ratio_vs_minsize:
 
 rule rename_denoised_ASVs:
 	input:
-		expand("07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}.fasta", alpha=config["denoising"]['alpha'], minsize=config['denoising']["minsize"])
+		expand(
+			"07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}.fasta",
+			alpha=config["denoising"]['alpha'],
+			minsize=config['denoising']["minsize"]
+		)
 	output:
 		"07_ASVs/ASVs_dnoise.fasta"
 	conda: "../envs/mb_vsearch.yaml"
@@ -109,7 +118,8 @@ rule rename_denoised_ASVs:
 	threads: 1
 	shell:
 		"""
-		vsearch --sizein --sizeout --fasta_width 0 --sortbysize {input} --output {output} --relabel ASV &> {log};
+		vsearch --sortbysize {input} --output {output} --relabel ASV \
+		--sizein --sizeout --fasta_width 0 &> {log};
 		"""
 
 rule screen_pseudogenes:

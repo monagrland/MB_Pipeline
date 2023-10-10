@@ -1,7 +1,6 @@
-channels:
+channels: # keep channel order, use strict channel priority
   - conda-forge
   - bioconda
   - nodefaults
 dependencies:
-  - multiqc=1.16
-  - python >=3.6
+  - multiqc =1.16

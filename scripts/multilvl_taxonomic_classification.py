@@ -426,10 +426,8 @@ def main(args):
             taxonomy_sans_multihits = tax_from_samfile_df
             hits_df = hit_ASVs
         else:
-            taxonomy_sans_multihits = taxonomy_sans_multihits.append(
-                tax_from_samfile_df
-            )
-            hits_df = hits_df.append(hit_ASVs)
+            taxonomy_sans_multihits = pd.concat([taxonomy_sans_multihits, tax_from_samfile_df])
+            hits_df = pd.concat([hits_df, hit_ASVs])
         hits_df.to_csv(
             os.path.splitext(output)[0] + ".direct.full.txt",
             sep="\t",
@@ -443,8 +441,8 @@ def main(args):
     )
     if len(hits_df) > 0:
         formatted_direct_classification = taxonomy_sans_multihits
-        taxonomy_df = formatted_direct_classification.append(
-            formatted_hierarchical_classification, ignore_index=True
+        taxonomy_df = pd.concat(
+            [formatted_direct_classification, formatted_hierarchical_classification], ignore_index=True
         )
     else:
         taxonomy_df = formatted_hierarchical_classification

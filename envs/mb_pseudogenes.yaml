@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - mafft # TODO explicit mafft version
-  - pip # TODO bioconda recipe for pytransaln so dependencies are explicitly specified
+  - mafft =7.520
+  - pip
   - pip:
     - pytransaln==0.2.0

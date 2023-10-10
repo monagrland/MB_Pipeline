@@ -1,0 +1,8 @@
+channels:
+  - nodefaults
+  - conda-forge
+  - bioconda
+dependencies:
+  - mafft =7.520
+  - iqtree =2.2
+  - scikit-bio =0.5.9

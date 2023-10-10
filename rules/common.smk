@@ -116,6 +116,47 @@ rule generate_community_table:
 		--threads {threads} --sizein --sizeout {params.options} &>> {log}
 		"""
 
+rule strip_size_info:
+	"""Remove abundance information from Fasta headers
+
+	iqtree will replace ; and = characters because they cause problems with
+	Newick tree files. Strip the ;size= abundance information from Fasta
+	headers to keep only ASV identifiers.
+	"""
+	input: "{prefix}.fasta"
+	output: "{prefix}.nosize.fasta"
+	conda: "../envs/mb_vsearch.yaml"
+	log: "logs/{prefix}.strip_size_info.log"
+	threads: 1
+	shell:
+		"""
+		vsearch --sortbysize {input} -xsize --output {output} &>> {log};
+		"""
+
+rule align_screened_asvs:
+	input: "08_ASVs_screened/ASVs_{method}.{screening}.nosize.fasta"
+	output: "13_phylogeny/ASVs_{method}.{screening}.mafft"
+	conda: "../envs/mb_phylogeny.yaml"
+	log: "logs/13_phylogeny/align_screened_asvs.{method}.{screening}.log"
+	threads: 8
+	shell:
+		"""
+		mafft --thread {threads} {input} > {output} 2>> {log};
+		"""
+
+rule iqtree_screened_asvs:
+	input: "13_phylogeny/ASVs_{method}.{screening}.mafft"
+	output: "13_phylogeny/ASVs_{method}.{screening}.treefile"
+	conda: "../envs/mb_phylogeny.yaml"
+	log: "logs/13_phylogeny/align_screened_asvs.{method}.{screening}.log"
+	params:
+		prefix="13_phylogeny/ASVs_{method}.{screening}",
+	threads: 8
+	shell:
+		"""
+		iqtree -s {input} -m TEST -B 1000 --prefix {params.prefix} -T {threads} &>> {log}
+		"""
+
 rule taxonomy:
 	"""Assign taxonomy to ASVs with two-step taxonomic classification method"""
 	input:

@@ -17,7 +17,7 @@ elif not config["paired"]:
 		"rules/single_end.smk"
 
 include: "rules/common.smk"
-include: "rules/common_coding.smk"
+include: "rules/coding.smk"
 
 if config["protein_coding"]:
 	screening="no_pseudogenes"
@@ -27,9 +27,15 @@ else:
 rule all:
 	input:
 		"logs/config_file.yaml",
-		expand("10_taxonomy/krona_plot.{method}.{screening}.html", method=config['denoising']['method'], screening=screening),
-		expand("11_merged/community_and_tax_merged.{method}.{screening}.txt", method=config['denoising']['method'], screening=screening),
-		expand("12_report/multiqc_report.{method}.{screening}.html", method=config['denoising']['method'], screening=screening),
+		expand(
+			[
+				"10_taxonomy/krona_plot.{method}.{screening}.html",
+				"11_merged/community_and_tax_merged.{method}.{screening}.txt",
+				"12_report/multiqc_report.{method}.{screening}.html",
+				"13_phylogeny/ASVs_{method}.{screening}.treefile",
+			],
+			method=config['denoising']['method'], screening=screening
+		),
 
 rule save_config:
 	""" Rule to save the config file in the logs directory """

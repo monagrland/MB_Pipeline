@@ -65,7 +65,7 @@ rule fasta_minsize:
 	shell:
 		"""
 		vsearch --minsize {wildcards.minsize} --sortbysize {input} --output {output} \
-		--sizein --sizeout --fasta_width 0 &>> log;
+		--sizein --sizeout --fasta_width 0 &>> {log};
 		"""
 
 rule remove_chimeras:

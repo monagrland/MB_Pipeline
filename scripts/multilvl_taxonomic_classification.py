@@ -358,7 +358,7 @@ def statistics(log, stats_table_path):
             direct_matches_lines.append(line)
         elif line.startswith("Classified"):
             hierarchical_matches_line = line
-        elif line.startswith("Reading file"):
+        elif line.startswith("Reading"):
             database_lst.append(os.path.basename(line.split()[2]))
 
     number_of_hits_lst = []

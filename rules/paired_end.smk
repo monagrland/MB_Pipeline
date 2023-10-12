@@ -13,7 +13,7 @@ rule concat_libs_per_sample:
 		"""
 
 rule cutadapt:
-	"""Remove the Adapter Sequences from the reads"""
+	"""Remove adapter sequences from the reads"""
 	input:
 		fw = "01_trimmed/{sample}.concat.R1.fastq.gz",
 		rv = "01_trimmed/{sample}.concat.R2.fastq.gz"
@@ -31,7 +31,8 @@ rule cutadapt:
 		"logs/01_cutadapt/{sample}.txt"
 	shell:
 		"""
-		cutadapt --cores {threads} -g {params.adapter_5p} -G {params.adapter_3p} -O {params.min_overlap} \
+		cutadapt --cores {threads} \
+		-g {params.adapter_5p} -G {params.adapter_3p} -O {params.min_overlap} \
 		-o {output.fw} -p {output.rv} {input.fw} {input.rv} &>>  {log}
 		"""
 
@@ -47,7 +48,7 @@ rule merge:
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
-	log:
+	log: # TODO merge stats should be in MultiQC
 		"logs/02_merging/{sample}.txt"
 	shell:
 		"""
@@ -67,11 +68,12 @@ rule quality_filter:
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
-	message:
-		"Executing Quality Filtering"
 	log:
 		"logs/03_quality_filtering/{sample}.txt"
 	shell:
-		"vsearch --fastq_filter {input} {params.options} --fastaout {output} --threads {threads} &>> {log}"
+		"""
+		vsearch --fastq_filter {input} {params.options} --fastaout {output} \
+		--threads {threads} &>> {log}
+		"""
 
 # vim: set noexpandtab:

@@ -11,7 +11,7 @@ rule concat_libs_per_sample:
 		"""
 
 rule cutadapt:
-	"""Remove the Adapter Sequences from the reads"""
+	"""Remove adapter sequences from the reads"""
 	input:
 		"01_trimmed/{sample}.concat.fastq.gz", # TODO get file extension from input
 	output:
@@ -31,7 +31,7 @@ rule cutadapt:
 		"""
 
 rule relabel:
-	"""Relabel fastq headers"""
+	"""Relabel Fastq headers"""
 	input:
 		"01_trimmed/{sample}.trim.fastq.gz",
 	output:
@@ -39,8 +39,6 @@ rule relabel:
 	params:
 		script_path = os.path.join(workflow.basedir, "scripts/relabel.py")
 	threads: 1
-	message:
-		"Relabeling FASTQ Headers"
 	shell:
 		"""
 		python3 {params.script_path} -i {input} -o {output}
@@ -57,8 +55,6 @@ rule quality_filter_single:
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
-	message:
-		"Executing Quality Filtering"
 	log:
 		"logs/03_quality_filtering/{sample}.txt"
 	shell:

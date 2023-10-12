@@ -12,7 +12,7 @@ rule dereplicate:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
 	log:
-		"logs/04_dereplicate/{sample}.txt"
+		"logs/04_derep/{sample}.txt"
 	shell:
 		"""
 		vsearch --derep_fulllength {input} --output {output} \
@@ -24,25 +24,25 @@ rule concat_samples:
 	input:
 		expand("04_derep/{sample}.derep.fasta", sample=samples)
 	output:
-		temp("05_concatenated_data/all_reads.fasta")
+		temp("05_concat/all_reads.fasta")
 	log:
-		"logs/05_concatenate/all_reads.txt"
+		"logs/05_concat/all_reads.txt"
 	shell:
 		"cat {input} > {output} 2> {log}"
 
 rule dereplicate_2:
 	"""Remove exact duplicates in concatenated reads"""
 	input:
-		"05_concatenated_data/all_reads.fasta"
+		"05_concat/all_reads.fasta"
 	output:
-		"06_derep_data/unique_reads.fasta"
+		"06_derep/unique_reads.fasta"
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: workflow.cores
 	message:
 		"Removing redundant reads for all reads"
 	log:
-		"logs/06_derep_data/dereplicate_2.log"
+		"logs/06_derep/dereplicate_2.log"
 	shell:
 		"""
 		vsearch --derep_fulllength {input} --output {output} \
@@ -56,7 +56,7 @@ rule denoising_unoise:
 	minsize parameters in the config file.
 	"""
 	input:
-		"06_derep_data/unique_reads.fasta"
+		"06_derep/unique_reads.fasta"
 	output:
 		"07_ASVs/ASVs_unoise.fasta"
 	params:
@@ -123,7 +123,7 @@ rule remove_chimeras:
 rule generate_community_table:
 	"""Map reads to ASVs and generate counts per ASV per sample"""
 	input:
-		search = "05_concatenated_data/all_reads.fasta",
+		search = "05_concat/all_reads.fasta",
 		db = "08_ASVs_screened/ASVs_{method}.{screening}.fasta"
 	output:
 		community_table = "09_community_table/community_table.{method}.{screening}.txt",

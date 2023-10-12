@@ -4,9 +4,9 @@ rule rename_headers_for_dnoise:
 	Input file to dnoise can have only one ; char in Fasta headers
 	"""
 	input:
-		"06_derep_data/unique_reads.fasta"
+		"06_derep/unique_reads.fasta"
 	output:
-		"06_derep_data/unique_reads_rename.fasta"
+		"06_derep/unique_reads_rename.fasta"
 	threads: 1
 	shell:
 		"sed 's/;sample/_sample/' {input} | sed 's/;ee/_ee/' > {output};"
@@ -20,7 +20,7 @@ rule denoising_dnoise:
 	values in config file to rerun if necessary.
 	"""
 	input:
-		"06_derep_data/unique_reads_rename.fasta"
+		"06_derep/unique_reads_rename.fasta"
 	output:
 		denoised="07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.fasta"
 	conda:
@@ -129,6 +129,7 @@ rule screen_pseudogenes:
 	output:
 		screened="08_ASVs_screened/ASVs_{method}.no_pseudogenes.fasta",
 		stats="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_stats.tsv",
+		hmmsearch="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hmmsearch.out",
 		hist_hmm="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_hmm.png",
 		hist_spf="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_spf.png",
 		hist_mins="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_mins.png",
@@ -142,7 +143,8 @@ rule screen_pseudogenes:
 		code=config['coding']['code'],
 	shell:
 		"""
-		pytransaln --input {input} --hmm {params.hmm} --code {params.code} \
+		pytransaln --input {input} --hmm {params.hmm} \
+		--code {params.code} --out_hmmsearch {output.hmmsearch} \
 		stats --out_screened {output.screened} --out_hist_hmm {output.hist_hmm} \
 		--out_stats {output.stats} --out_hist_spf {output.hist_spf} \
 		--out_hist_mins {output.hist_mins} &> {log};

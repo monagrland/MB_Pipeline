@@ -1,14 +1,14 @@
 workdir: # Path to working folder
   "test"
-input:   # Folder with input files - path is relative to workdir
-  "input"
+reads_table: # Table of samples and read files; path is relative to workdir
+  "reads.tsv"
 paired: true           # true or false only
 protein_coding: true   # true or false only
 
 adapter_trimming_options:
-  - "-g CCNGAYATRGCNTTTYCCNCG"
-  - "-G TANACYTCNGGRTGNCCRAARAAYCA"
-  - "-O 23"
+  5p: "CCNGAYATRGCNTTTYCCNCG"
+  3p: "TANACYTCNGGRTGNCCRAARAAYCA"
+  min_overlap: 23
 merge_options:
   - "--fastq_allowmergestagger"
   - "--fastq_minovlen 100"

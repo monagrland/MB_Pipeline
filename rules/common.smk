@@ -2,6 +2,34 @@ wildcard_constraints:
 		method=r"dnoise|unoise",
 		screening=r"no_chimeras|no_pseudogenes"
 
+rule dereplicate:
+	"""Remove duplicates in each read file"""
+	input:
+		"03_filtered/{sample}.filtered.fasta",
+	output:
+		temp("04_derep/{sample}.derep.fasta"),
+	conda:
+		"../envs/mb_vsearch.yaml"
+	threads: 1
+	log:
+		"logs/04_dereplicate/{sample}.txt"
+	shell:
+		"""
+		vsearch --derep_fulllength {input} --output {output} \
+		--threads {threads} --strand plus --sizeout --fasta_width 0 &>> {log}
+		"""
+
+rule concat_samples:
+	"""Concatenate reads from all samples into single file"""
+	input:
+		expand("04_derep/{sample}.derep.fasta", sample=samples)
+	output:
+		temp("05_concatenated_data/all_reads.fasta")
+	log:
+		"logs/05_concatenate/all_reads.txt"
+	shell:
+		"cat {input} > {output} 2> {log}"
+
 rule dereplicate_2:
 	"""Remove exact duplicates in concatenated reads"""
 	input:

@@ -1,52 +1,67 @@
+rule concat_libs_per_sample:
+	"""Concatenate multiple sequencing files from the same sample"""
+	input:
+		fw = lambda wildcards: reads_df[reads_df['sample'] == wildcards.sample]['fwd'],
+		rv = lambda wildcards: reads_df[reads_df['sample'] == wildcards.sample]['rev'],
+	output:
+		fw = temp("01_trimmed/{sample}.concat.R1.fastq.gz"), # TODO get file extension from input
+		rv = temp("01_trimmed/{sample}.concat.R2.fastq.gz"),
+	shell:
+		"""
+		cat {input.fw} > {output.fw};
+		cat {input.rv} > {output.rv};
+		"""
+
 rule cutadapt:
 	"""Remove the Adapter Sequences from the reads"""
 	input:
-		input_fw = os.path.join(config["input"], "{prefix}_R1_{suffix}.gz"),
-		input_rv = os.path.join(config["input"], "{prefix}_R2_{suffix}.gz")
+		fw = "01_trimmed/{sample}.concat.R1.fastq.gz",
+		rv = "01_trimmed/{sample}.concat.R2.fastq.gz"
 	output:
-		output_fw = temp("01_trimmed_data/{prefix}_R1_{suffix}.gz"),
-		output_rv = temp("01_trimmed_data/{prefix}_R2_{suffix}.gz")
+		fw = temp("01_trimmed/{sample}.trim.R1.fastq.gz"),
+		rv = temp("01_trimmed/{sample}.trim.R2.fastq.gz")
 	params:
-		options = " ".join(config["adapter_trimming_options"]),
+		adapter_5p=config['adapter_trimming_options']['5p'],
+		adapter_3p=config['adapter_trimming_options']['3p'],
+		min_overlap=config['adapter_trimming_options']['min_overlap'],
 	conda:
 		"../envs/mb_cutadapt.yaml"
 	threads: 1
 	log:
-		"logs/01_cutadapt/{prefix}_{suffix}.txt"
+		"logs/01_cutadapt/{sample}.txt"
 	shell:
 		"""
-		cutadapt --cores {threads} {params.options} -o {output.output_fw} \
-		-p {output.output_rv} {input.input_fw} {input.input_rv} &>>  {log}
+		cutadapt --cores {threads} -g {params.adapter_5p} -G {params.adapter_3p} -O {params.min_overlap} \
+		-o {output.fw} -p {output.rv} {input.fw} {input.rv} &>>  {log}
 		"""
 
 rule merge:
 	"""Merge paired end reads to a single file"""
 	input:
-		input_fw = "01_trimmed_data/{prefix}_R1_{suffix}.gz",
-		input_rv = "01_trimmed_data/{prefix}_R2_{suffix}.gz"
+		fw = "01_trimmed/{sample}.trim.R1.fastq.gz",
+		rv = "01_trimmed/{sample}.trim.R2.fastq.gz"
 	output:
-		temp("02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq")
+		temp("02_merged/{sample}.merged.fastq.gz"),
 	params:
 		options = " ".join(config["merge_options"]),
-		basename = "{prefix}"
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
 	log:
-		"logs/02_merging/{prefix}_{suffix}.txt"
+		"logs/02_merging/{sample}.txt"
 	shell:
 		"""
-		vsearch --fastq_mergepairs {input.input_fw} --reverse {input.input_rv} \
-		--fastqout {output} {params.options} --relabel {params.basename}_ \
-		--label_suffix \;sample={params.basename} --threads {threads} &>> {log}
+		vsearch --fastq_mergepairs {input.fw} --reverse {input.rv} \
+		--fastqout {output} {params.options} --relabel {wildcards.sample}_ \
+		--label_suffix \;sample={wildcards.sample} --threads {threads} &>> {log}
 		"""
 
 rule quality_filter:
 	"""Filter reads by quality scores"""
 	input:
-		"02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq"
+		"02_merged/{sample}.merged.fastq.gz",
 	output:
-		temp("03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
+		temp("03_filtered/{sample}.filtered.fasta"),
 	params:
 		options = " ".join(config["filter_options"]),
 	conda:
@@ -55,45 +70,8 @@ rule quality_filter:
 	message:
 		"Executing Quality Filtering"
 	log:
-		"logs/03_quality_filtering/{prefix}_{suffix}.txt"
+		"logs/03_quality_filtering/{sample}.txt"
 	shell:
 		"vsearch --fastq_filter {input} {params.options} --fastaout {output} --threads {threads} &>> {log}"
-
-rule dereplicate:
-	"""Remove duplicates in each read file"""
-	input:
-		"03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"
-	output:
-		temp("04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
-	conda:
-		"../envs/mb_vsearch.yaml"
-	threads: 1
-	log:
-		"logs/04_dereplicate/{prefix}_" + os.path.splitext("{suffix}")[0] + ".txt"
-	shell:
-		"""
-		vsearch --derep_fulllength {input} --output {output} \
-		--threads {threads} --strand plus --sizeout --fasta_width 0 &>> {log}
-		"""
-
-rule concatenate:
-	"""Concatenate all reads into single file"""
-	input:
-		expand(
-			"04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta",
-			zip,
-			prefix = fw_files.prefix,
-			suffix = fw_files.suffix
-		)
-	output:
-		temp("05_concatenated_data/all_reads.fasta")
-	params:
-		derep_dir = "04_derep_data/"
-	message:
-		"Concatenating all reads"
-	log:
-		"logs/05_concatenate/all_reads.txt"
-	shell:
-		"cat {params.derep_dir}*.fasta > {output} 2> {log}"
 
 # vim: set noexpandtab:

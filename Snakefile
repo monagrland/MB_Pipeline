@@ -6,8 +6,8 @@ import gzip
 import yaml
 
 workdir : config['workdir']
-fw_files = glob_wildcards(config["input"] + "/{prefix}_R1_{suffix}.gz")
-files_single = glob_wildcards(config["input"] + "/{basename}.gz")
+reads_df = pd.read_table(config['reads_table'], sep="\t").set_index("sample", drop=False)
+samples = reads_df['sample'].drop_duplicates()
 
 if config["paired"]:
 	include:

@@ -49,6 +49,8 @@ community_table_options:
   - "--id 0.97"
   - "--strand plus"
 
+treeprog: "fasttree" # Options: fasttree, iqtree
+
 # Taxonomic classification
 direct_dbs: # Path is relative to workdir
   - "db/bold_coi-5p_test.fasta"

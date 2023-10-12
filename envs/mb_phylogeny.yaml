@@ -5,6 +5,7 @@ channels:
 dependencies:
   - mafft =7.520
   - iqtree =2.2
+  - fasttree =2.1
   - scikit-bio =0.5.9
   - biom-format =2.1
   - pandas =2.0

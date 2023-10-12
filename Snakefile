@@ -32,9 +32,11 @@ rule all:
 				"10_taxonomy/krona_plot.{method}.{screening}.html",
 				"11_merged/community_and_tax_merged.{method}.{screening}.txt",
 				"12_report/multiqc_report.{method}.{screening}.html",
-				"13_phylogeny/ASVs_{method}.{screening}.faiths_pd.tsv",
+				"13_phylogeny/ASVs_{method}.{screening}.{treeprog}.faiths_pd.tsv",
 			],
-			method=config['denoising']['method'], screening=screening
+			method=config['denoising']['method'],
+			screening=screening,
+			treeprog=config['treeprog'],
 		),
 
 rule save_config:

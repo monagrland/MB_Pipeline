@@ -119,9 +119,9 @@ rule generate_community_table:
 rule strip_size_info:
 	"""Remove abundance information from Fasta headers
 
-	iqtree will replace ; and = characters because they cause problems with
-	Newick tree files. Strip the ;size= abundance information from Fasta
-	headers to keep only ASV identifiers.
+	The ; and = characters used in key=value pairs cause problems with Newick
+	tree files. Strip the ;size= abundance information from Fasta headers to
+	keep only ASV identifiers.
 	"""
 	input: "{prefix}.fasta"
 	output: "{prefix}.nosize.fasta"
@@ -144,25 +144,36 @@ rule align_screened_asvs:
 		mafft --thread {threads} {input} > {output} 2>> {log};
 		"""
 
+rule fasttree_screened_asvs:
+	input: "13_phylogeny/ASVs_{method}.{screening}.mafft"
+	output: "13_phylogeny/ASVs_{method}.{screening}.fasttree.treefile"
+	conda: "../envs/mb_phylogeny.yaml"
+	log: "logs/13_phylogeny/align_screened_asvs.{method}.{screening}.fasttree.log"
+	threads: 1
+	shell:
+		"""
+		fasttree -nt -gtr -gamma {input} > {output} 2> {log};
+		"""
+
 rule iqtree_screened_asvs:
 	input: "13_phylogeny/ASVs_{method}.{screening}.mafft"
 	output: "13_phylogeny/ASVs_{method}.{screening}.treefile"
 	conda: "../envs/mb_phylogeny.yaml"
-	log: "logs/13_phylogeny/align_screened_asvs.{method}.{screening}.log"
+	log: "logs/13_phylogeny/align_screened_asvs.{method}.{screening}.iqtree.log"
 	params:
-		prefix="13_phylogeny/ASVs_{method}.{screening}",
+		prefix="13_phylogeny/ASVs_{method}.{screening}.iqtree",
 	threads: 8
 	shell:
 		"""
-		iqtree -s {input} -m TEST -B 1000 --prefix {params.prefix} -redo -T {threads} &>> {log}
+		iqtree -s {input} -m TEST --fast --prefix {params.prefix} -redo -T AUTO --threads-max {threads} &>> {log}
 		"""
 
 rule faiths_pd:
 	input:
-		tree = "13_phylogeny/ASVs_{method}.{screening}.treefile",
+		tree = "13_phylogeny/ASVs_{method}.{screening}.{treeprog}.treefile",
 		biom = "09_community_table/community_table.{method}.{screening}.biom",
 	output:
-		"13_phylogeny/ASVs_{method}.{screening}.faiths_pd.tsv"
+		"13_phylogeny/ASVs_{method}.{screening}.{treeprog}.faiths_pd.tsv"
 	conda: "../envs/mb_phylogeny.yaml"
 	params:
 		script_path = os.path.join(workflow.basedir, "scripts/faiths_pd.py")

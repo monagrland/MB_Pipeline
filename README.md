@@ -4,6 +4,7 @@ This is a Metabarcoding Pipeline developed for Illumina Sequencing Data at the
 Thuenen Institute of Biodiversity, Braunschweig by Wiebke Sickel & Lasse
 Krueger.
 
+
 ## Prerequisites
 
 The Pipeline is managed by [Snakemake](https://snakemake.readthedocs.io/) and
@@ -56,6 +57,7 @@ for the complete list:
 The config file is a simple .yaml file containing all required information. An
 example config file is provided: `example_config.yaml`.
 
+
 #### Working directory path
 
 Specify the path to write all results and logs:
@@ -74,6 +76,7 @@ Specify the directory containing the sequencing reads at `input` key.
 input: /home/user/metabarcoding_raw_data
 ```
 
+
 ### Paired- or single-end reads
 If paired end reads are used, specify this at the `paired` key. This key
 accepts only `true` or `false`.
@@ -81,6 +84,7 @@ accepts only `true` or `false`.
 ```yaml
 paired: true
 ```
+
 
 ### Adapter Trimming
 
@@ -98,6 +102,7 @@ adapter_trimming_options:
   - "-G GACGCTTCTCCAGACTACAAT"
   - "-O 23"
 ```
+
 
 ### Merging paired reads
 
@@ -126,26 +131,19 @@ filter_options:
   - "--fasta_width 0"
 ```
 
+
 ### Dereplication
 
-First round:
+Exactly identical sequences are removed with VSEARCH `--derep_fulllength`.
 
-```yaml
-derep1_options:
-  - "--strand plus"
-  - "--sizeout"
-  - "--fasta_width 0"
-```
-
-Second round:
 
 ### Protein coding sequences
 
 Protein-coding sequences (e.g. the mitochondrial cytochrome oxidase I marker
 sequence) can be processed differently from non-coding sequences (e.g. tRNA or
-rRNA markers). Instead of filtering for chimeras with UCHIME, putative
-pseudogenes are removed that have excessive in-frame stop codons or where the
-translation does not match a HMM of the target protein.
+rRNA markers). Instead of filtering for chimeras with UCHIME (see below),
+putative pseudogenes are removed that have excessive in-frame stop codons or
+where the translation does not match a HMM of the target protein.
 
 Activate the coding sequence-specific subworkflow with:
 
@@ -168,6 +166,7 @@ coding:
 Entropy ratio-based distance denoising with DnoisE (see below) is only
 available for coding sequences; the reading frame must be specified. However it
 is possible to denoise with DnoisE but still use UCHIME to remove chimeras.
+
 
 ### Denoising
 
@@ -196,6 +195,7 @@ sequences).
 Minsize is the minimum number of sequences represented by a cluster after
 denoising.
 
+
 #### Denoising with DnoisE
 
 This will perform entropy-based distance denoising with
@@ -217,36 +217,41 @@ minsize_range: [2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]
 
 The pipeline first runs with the default alpha and minsize values (see below),
 and also produces plots of entropy ratio vs. alpha and minsize for the
-specified ranges. After reviewing the plots, the user can update the default
-values if necessary.
+specified ranges. After reviewing the plots, the user can update the values for
+alpha and minsize and rerun the pipeline if necessary.
 
 
-### Chimera check
+### Screening for non-target sequences and artefacts
 
-Chimera check with UCHIME implemented in Vsearch.
+Non-target sequences (e.g. pseudogenes, non-target amplicons) and technical
+artefacts (e.g. PCR chimeras) should be removed from the sequences.
 
-```yaml
-chimera_check_options:
-  - "--sizein"
-  - "--sizeout"
-  - "--fasta_width 0"
-```
+Coding sequences are screened with an HMM of the target protein, and for
+excessive in-frame stop codons (see above). This procedure should also
+indirectly remove PCR chimeras.
+
+For non-coding sequences are screened for PCR chimeras with UCHIME de-novo
+implemented in VSEARCH.
+
 
 ### Community Table Creation
+
+Reads are aligned to the final set of ASVs to calculate abundance per ASV per
+sample.
 
 ```yaml
 community_table_options:
   - "--id 0.97"
   - "--strand plus"
-  - "--threads 6"
-  - "--sizein"
-  - "--sizeout"
 ```
 
-### Reference databases for taxonomic classification
 
-These can be either in Fasta or UDB format (faster, as it avoids re-indexing
-every time the pipeline is run).
+### Taxonomic classification
+
+#### Reference databases for taxonomic classification
+
+These can be either in Fasta or UDB format. For large databases, preparing a
+UDB file is faster, as it avoids re-indexing every time the pipeline is run.
 
 ```yaml
 direct_dbs:
@@ -255,12 +260,13 @@ direct_dbs:
 hierarchical_db: "/mnt/data/databases/bcd_ITS2/its2_viridiplantae_all.fa"
 ```
 
-### Classification Thresholds
+#### Classification Thresholds
 
 ```yaml
 classification_threshold: "0.97"
 hierarchical_threshold: "0.8"
 ```
+
 
 ## Unlocking
 Snakemake by default locks the directories in which the results are saved. If a
@@ -271,6 +277,7 @@ the directory, simply run the following script:
 ```bash
 bash run_pipeline.sh example_config.yaml
 ```
+
 
 ## Workflow
 

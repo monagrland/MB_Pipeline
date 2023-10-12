@@ -65,7 +65,6 @@ rule dereplicate:
 		temp("04_derep_data/{basename}.fasta")
 	params:
 		filename = "{basename}.fasta",
-		options = " ".join(config["derep1_options"]),
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
@@ -75,8 +74,8 @@ rule dereplicate:
 		"logs/04_dereplicate/{basename}.txt"
 	shell:
 		"""
-		vsearch --derep_fulllength {input} --output {output} {params.options} \
-		--threads {threads} &>> {log}
+		vsearch --derep_fulllength {input} --output {output} \
+		--threads {threads} --strand plus --sizeout --fasta_width 0 &>> {log}
 		"""
 
 rule concatenate:

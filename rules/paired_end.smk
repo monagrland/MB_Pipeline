@@ -75,7 +75,6 @@ rule dereplicate:
 		temp("04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
 	params:
 		filename = "{prefix}_{suffix}.fasta",
-		options = " ".join(config["derep1_options"])
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
@@ -84,7 +83,11 @@ rule dereplicate:
 	log:
 		"logs/04_dereplicate/{prefix}_" + os.path.splitext("{suffix}")[0] + ".txt"
 	shell:
-		"vsearch --threads {threads} --derep_fulllength {input} --output {output} {params.options} &>> {log}"
+		"""
+		vsearch --derep_fulllength {input} --output {output} \
+		--threads {threads} --strand plus --sizeout --fasta_width 0 &>> {log}
+		"""
+
 
 rule concatenate:
 	"""Concatenate all reads into single file"""

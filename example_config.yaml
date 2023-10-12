@@ -20,10 +20,6 @@ filter_options:
   - "--fastq_maxlen 800"
   - "--fastq_maxns 0"
   - "--fasta_width 0"
-derep1_options: # TODO obligatory options should be hardcoded
-  - "--strand plus"
-  - "--sizeout"
-  - "--fasta_width 0"
 
 # Coding sequences only
 coding:

@@ -1,6 +1,6 @@
 wildcard_constraints:
-		method=r"[a-z]+",
-		screening=r"no_[a-z]+"
+		method=r"dnoise|unoise",
+		screening=r"no_chimeras|no_pseudogenes"
 
 rule dereplicate_2:
 	"""Remove exact duplicates in concatenated reads"""

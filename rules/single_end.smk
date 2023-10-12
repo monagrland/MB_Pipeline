@@ -6,12 +6,9 @@ rule cutadapt:
 		temp(output_fw = "01_trimmed_data/{basename}.gz"),
 	params:
 		options = " ".join(config["adapter_trimming_options"]),
-		filename_fw = "{basename}.gz",
 	conda:
 		"../envs/mb_cutadapt.yaml"
 	threads: 1
-	message:
-		"Executing adapter trimming for {params.filename_fw}"
 	log:
 		"logs/01_cutadapt/{basename}.txt"
 	shell:
@@ -63,13 +60,9 @@ rule dereplicate:
 		"03_filtered_data/{basename}.fasta"
 	output:
 		temp("04_derep_data/{basename}.fasta")
-	params:
-		filename = "{basename}.fasta",
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
-	message:
-		"Removing redundant reads for {params.filename}"
 	log:
 		"logs/04_dereplicate/{basename}.txt"
 	shell:

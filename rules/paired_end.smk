@@ -8,13 +8,9 @@ rule cutadapt:
 		output_rv = temp("01_trimmed_data/{prefix}_R2_{suffix}.gz")
 	params:
 		options = " ".join(config["adapter_trimming_options"]),
-		filename_fw = "{prefix}_R1_{suffix}.gz",
-		filename_rv = "{prefix}_R2_{suffix}.gz",
 	conda:
 		"../envs/mb_cutadapt.yaml"
 	threads: 1
-	message:
-		"Executing adapter trimming for {params.filename_fw} and {params.filename_rv}"
 	log:
 		"logs/01_cutadapt/{prefix}_{suffix}.txt"
 	shell:
@@ -32,14 +28,10 @@ rule merge:
 		temp("02_merged_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fastq")
 	params:
 		options = " ".join(config["merge_options"]),
-		filename_fw = "{prefix}_R1_{suffix}.gz",
-		filename_rv = "{prefix}_R2_{suffix}.gz",
 		basename = "{prefix}"
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
-	message:
-		"Merging paired end reads for {params.filename_fw} and {params.filename_rv}"
 	log:
 		"logs/02_merging/{prefix}_{suffix}.txt"
 	shell:
@@ -73,13 +65,9 @@ rule dereplicate:
 		"03_filtered_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta"
 	output:
 		temp("04_derep_data/{prefix}_" + os.path.splitext("{suffix}")[0] + "_merged.fasta")
-	params:
-		filename = "{prefix}_{suffix}.fasta",
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
-	message:
-		"Removing redundant reads for {params.filename}"
 	log:
 		"logs/04_dereplicate/{prefix}_" + os.path.splitext("{suffix}")[0] + ".txt"
 	shell:
@@ -87,7 +75,6 @@ rule dereplicate:
 		vsearch --derep_fulllength {input} --output {output} \
 		--threads {threads} --strand plus --sizeout --fasta_width 0 &>> {log}
 		"""
-
 
 rule concatenate:
 	"""Concatenate all reads into single file"""

@@ -4,6 +4,9 @@ import pandas as pd
 import csv
 import gzip
 import yaml
+from snakemake.utils import validate
+
+validate(config, "config/config.schema.yaml")
 
 workdir : config['workdir']
 reads_df = pd.read_table(config['reads_table'], sep="\t").set_index("sample", drop=False)

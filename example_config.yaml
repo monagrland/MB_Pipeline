@@ -52,6 +52,6 @@ direct_dbs: # Path is relative to workdir
   - "db/bold_coi-5p_test.fasta"
 hierarchical_db:
   "db/bold_coi-5p_test.fasta"
-classification_threshold: "0.90"
-hierarchical_threshold: "0.8"
+classification_threshold: 0.90
+hierarchical_threshold: 0.8
 

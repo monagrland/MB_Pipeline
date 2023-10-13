@@ -286,14 +286,27 @@ rule merge_tables:
 		merged_table = pd.merge(community_table, tax_table, left_index=True, right_index=True)
 		merged_table.to_csv(output.merged_table, sep='\t')
 
+
+def mqc_files(paired):
+	if paired:
+		return [
+			"10_taxonomy/stats_mqc.{method}.{screening}.csv",
+			"logs/vsearch_fastq_mergepairs._mqc.json",
+			"logs/vsearch_fastq_filter._mqc.json",
+			"logs/vsearch_derep_fulllength._mqc.json"
+		]
+	else:
+		return [
+			"10_taxonomy/stats_mqc.{method}.{screening}.csv",
+			"logs/vsearch_fastq_filter._mqc.json",
+			"logs/vsearch_derep_fulllength._mqc.json"
+		]
+
 rule generate_report:
 	input:
 		community_table = "09_community_table/community_table.{method}.{screening}.txt",
 		custom_mqc_config = os.path.join(workflow.basedir, "config/multiqc_config.yaml"),
-		stats_mqc = "10_taxonomy/stats_mqc.{method}.{screening}.csv",
-		fastq_mergepairs = "logs/vsearch_fastq_mergepairs._mqc.json",
-		fastq_filter = "logs/vsearch_fastq_filter._mqc.json",
-		derep_fulllength = "logs/vsearch_derep_fulllength._mqc.json",
+		mqc_files = mqc_files(config['paired']),
 	output:
 		"12_report/multiqc_report.{method}.{screening}.html"
 	conda:
@@ -308,8 +321,7 @@ rule generate_report:
 		"logs/12_report/generate_report.{method}.{screening}.log"
 	shell:
 		"""
-		multiqc {input.stats_mqc} {input.fastq_filter} {input.fastq_mergepairs} \
-		{input.derep_fulllength} \
+		multiqc {input.mqc_files} \
 		-n {params.output_fn} -o {params.output_dir} \
 		--config {input.custom_mqc_config} {params.log_dir} --force &> {log}
 		"""

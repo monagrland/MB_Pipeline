@@ -1,11 +1,20 @@
 extra_fn_clean_exts:
     - type: 'remove'
-      pattern: '_R1'
+      pattern: '.concat.R1'
       module:
         - cutadapt
-        - trimmomatic
     - type: 'remove'
-      pattern: '_R2'
+      pattern: '.concat.R2'
       module:
         - cutadapt
-        - trimmomatic
+
+custom_data:
+  tax_classification:
+    file_format: "tsv"
+    section_name: "Taxonomic classification"
+    plot_type: "table"
+
+sp:
+  tax_classification:
+    fn: "stats_mqc.*"
+

@@ -265,7 +265,7 @@ rule merge_tables:
 rule generate_report:
 	input:
 		community_table = "09_community_table/community_table.{method}.{screening}.txt",
-		custom_mqc_config = os.path.join(workflow.basedir, "multiqc_config.yaml"),
+		custom_mqc_config = os.path.join(workflow.basedir, "config/multiqc_config.yaml"),
 		stats_mqc = "10_taxonomy/stats_mqc.{method}.{screening}.csv"
 	output:
 		"12_report/multiqc_report.{method}.{screening}.html"

@@ -9,7 +9,9 @@ from snakemake.utils import validate
 validate(config, "config/config.schema.yaml")
 
 workdir : config['workdir']
-reads_df = pd.read_table(config['reads_table'], sep="\t").set_index("sample", drop=False)
+reads_df = pd.read_table(config['reads_table'], sep="\t")
+validate(reads_df, "config/reads_df.schema.yaml")
+reads_df = reads_df.set_index("sample", drop=False)
 samples = reads_df['sample'].drop_duplicates()
 
 if config["paired"]:

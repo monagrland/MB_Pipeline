@@ -2,6 +2,18 @@ wildcard_constraints:
 		method=r"dnoise|unoise",
 		screening=r"no_chimeras|no_pseudogenes"
 
+rule quality_filter_mqc:
+	input:
+		expand("logs/03_quality_filtering/{sample}.txt", sample=samples),
+	output:
+		"logs/vsearch_fastq_filter._mqc.json"
+	params:
+		script_path = os.path.join(workflow.basedir, "scripts/vsearch_logs_multiqc.py")
+	shell:
+		"""
+		python {params.script_path} --format fastq_filter --files {input} > {output}
+		"""
+
 rule dereplicate:
 	"""Remove duplicates in each read file"""
 	input:
@@ -17,6 +29,18 @@ rule dereplicate:
 		"""
 		vsearch --derep_fulllength {input} --output {output} \
 		--threads {threads} --strand plus --sizeout --fasta_width 0 &>> {log}
+		"""
+
+rule dereplicate_mqc:
+	input:
+		expand("logs/04_derep/{sample}.txt", sample=samples)
+	output:
+		"logs/vsearch_derep_fulllength._mqc.json"
+	params:
+		script_path = os.path.join(workflow.basedir, "scripts/vsearch_logs_multiqc.py")
+	shell:
+		"""
+		python {params.script_path} --format derep_fulllength --files {input} > {output}
 		"""
 
 rule concat_samples:
@@ -266,7 +290,10 @@ rule generate_report:
 	input:
 		community_table = "09_community_table/community_table.{method}.{screening}.txt",
 		custom_mqc_config = os.path.join(workflow.basedir, "config/multiqc_config.yaml"),
-		stats_mqc = "10_taxonomy/stats_mqc.{method}.{screening}.csv"
+		stats_mqc = "10_taxonomy/stats_mqc.{method}.{screening}.csv",
+		fastq_mergepairs = "logs/vsearch_fastq_mergepairs._mqc.json",
+		fastq_filter = "logs/vsearch_fastq_filter._mqc.json",
+		derep_fulllength = "logs/vsearch_derep_fulllength._mqc.json",
 	output:
 		"12_report/multiqc_report.{method}.{screening}.html"
 	conda:
@@ -281,7 +308,9 @@ rule generate_report:
 		"logs/12_report/generate_report.{method}.{screening}.log"
 	shell:
 		"""
-		multiqc {input.stats_mqc} -n {params.output_fn} -o {params.output_dir} \
+		multiqc {input.stats_mqc} {input.fastq_filter} {input.fastq_mergepairs} \
+		{input.derep_fulllength} \
+		-n {params.output_fn} -o {params.output_dir} \
 		--config {input.custom_mqc_config} {params.log_dir} --force &> {log}
 		"""
 

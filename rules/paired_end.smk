@@ -48,13 +48,26 @@ rule merge:
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
-	log: # TODO merge stats should be in MultiQC
+	log:
 		"logs/02_merging/{sample}.txt"
 	shell:
 		"""
 		vsearch --fastq_mergepairs {input.fw} --reverse {input.rv} \
 		--fastqout {output} {params.options} --relabel {wildcards.sample}_ \
 		--label_suffix \;sample={wildcards.sample} --threads {threads} &>> {log}
+		"""
+
+rule merge_mqc:
+	"""MultiQC summary of merge statistics"""
+	input:
+		expand("logs/02_merging/{sample}.txt", sample=samples)
+	output:
+		"logs/vsearch_fastq_mergepairs._mqc.json"
+	params:
+		script_path = os.path.join(workflow.basedir, "scripts/vsearch_logs_multiqc.py")
+	shell:
+		"""
+		python {params.script_path} --format fastq_mergepairs --files {input} > {output}
 		"""
 
 rule quality_filter:

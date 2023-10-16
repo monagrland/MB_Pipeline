@@ -4,3 +4,4 @@ channels: # keep channel order, use strict channel priority
   - nodefaults
 dependencies:
   - multiqc =1.16
+  - python <=3.11 # see https://github.com/ewels/MultiQC/issues/2112

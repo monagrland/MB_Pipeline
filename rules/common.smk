@@ -287,26 +287,29 @@ rule merge_tables:
 		merged_table.to_csv(output.merged_table, sep='\t')
 
 
-def mqc_files(paired):
+def mqc_files(paired, coding):
+	out = [
+		"10_taxonomy/stats_mqc.{method}.{screening}.csv",
+		"logs/vsearch_fastq_filter._mqc.json",
+		"logs/vsearch_derep_fulllength._mqc.json"
+	]
 	if paired:
-		return [
-			"10_taxonomy/stats_mqc.{method}.{screening}.csv",
-			"logs/vsearch_fastq_mergepairs._mqc.json",
-			"logs/vsearch_fastq_filter._mqc.json",
-			"logs/vsearch_derep_fulllength._mqc.json"
-		]
-	else:
-		return [
-			"10_taxonomy/stats_mqc.{method}.{screening}.csv",
-			"logs/vsearch_fastq_filter._mqc.json",
-			"logs/vsearch_derep_fulllength._mqc.json"
-		]
+		out.append("logs/vsearch_fastq_mergepairs._mqc.json")
+	if coding:
+		out.extend(
+			[
+				"08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_hmm_mqc.json",
+				"08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_spf_mqc.json",
+				"08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_mins_mqc.json",
+			]
+		)
+	return out
 
 rule generate_report:
 	input:
 		community_table = "09_community_table/community_table.{method}.{screening}.txt",
 		custom_mqc_config = os.path.join(workflow.basedir, "config/multiqc_config.yaml"),
-		mqc_files = mqc_files(config['paired']),
+		mqc_files = mqc_files(config['paired'], config['protein_coding']),
 	output:
 		"12_report/multiqc_report.{method}.{screening}.html"
 	conda:

@@ -133,6 +133,9 @@ rule screen_pseudogenes:
 		hist_hmm="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_hmm.png",
 		hist_spf="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_spf.png",
 		hist_mins="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_mins.png",
+		mqc_hmm="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_hmm_mqc.json",
+		mqc_spf="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_spf_mqc.json",
+		mqc_mins="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_mins_mqc.json",
 	wildcard_constraints:
 		method=r"[a-z]+"
 	conda: "../envs/mb_pseudogenes.yaml"
@@ -146,6 +149,8 @@ rule screen_pseudogenes:
 		pytransaln --input {input} --hmm {params.hmm} \
 		--code {params.code} --out_hmmsearch {output.hmmsearch} \
 		stats --out_screened {output.screened} --out_hist_hmm {output.hist_hmm} \
+		--out_mqc_hmm {output.mqc_hmm} --out_mqc_spf {output.mqc_spf} \
+		--out_mqc_mins {output.mqc_mins} \
 		--out_stats {output.stats} --out_hist_spf {output.hist_spf} \
 		--out_hist_mins {output.hist_mins} &> {log};
 		"""

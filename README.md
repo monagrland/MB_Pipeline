@@ -283,13 +283,25 @@ bash run_pipeline.sh example_config.yaml
 
 ```mermaid
 flowchart TB
-    seq_data(Sequencing Data)--> Cutadapt
-    Cutadapt --> vsearch_merge(VSEARCH --fastq_mergepairs)
-    vsearch_merge(VSEARCH --fastq_mergepairs) --> vsearch_filter(VSEARCH --fastq_filter)
-    vsearch_filter(VSEARCH --fastq_filter) --> vsearch_dereplicate(VSEARCH --derep_fullength)
-    vsearch_dereplicate(VSEARCH --derep_fulllength) --> Concatenate
-    Concatenate --> vsearch_dereplicate2(VSEARCH --derep_fulllength)
-    vsearch_dereplicate2(VSEARCH --derep_fulllength) --> vsearch_denoise(VSEARCH --cluster_unoise)
-    vsearch_denoise(VSEARCH --cluster_unoise) --> vsearch_chimera(VSEARCH --uchime3_denovo)
-    vsearch_chimera(VSEARCH --uchime3_denovo) --> vsearch_com_table(VSEARCH --usearch_global)
+    seq_data(Sequencing Data)--> |cutadapt| trimmed(Trimmed reads)
+    trimmed --> |vsearch --fastq_mergepairs| merged(Merged reads)
+    merged --> |vsearch --fastq_filter| filtered(Quality-filtered reads)
+    filtered --> |vsearch --derep_fullength| derep1(Dereplicated reads)
+    derep1 --> |cat| concat(Pooled reads)
+    concat --> |vsearch --derep_fulllength| derep2(Pooled, dereplicated reads)
+    derep2 --> coding_or_noncoding{Protein-coding?}
+    coding_or_noncoding --> coding(Coding)
+    coding --> |dnoise| dnoise_denoised(Entropy-denoised ASVs)
+    dnoise_denoised --> |pytransaln| pseudogene_screened(Screened for pseudogenes, min cluster size)
+    coding_or_noncoding --> noncoding(Non-coding)
+    noncoding --> |vsearch --cluster_unoise| unoise_denoised(Unoise-denoised ASVs)
+    unoise_denoised --> |vsearch --uchime3_denovo| uchime_screened(Screened for chimeras, min cluster size)
+    uchime_screened --> asvs(Denoised, screened ASVs)
+    pseudogene_screened --> asvs
+    asvs --> comtab(Community table)
+    concat --> |vsearch --usearch_global| comtab
+    asvs --> |mafft| align(Aligned ASVs)
+    align --> |fasttree| phylogeny(Phylogenetic tree of ASVs)
+    phylogeny --> faithpd(Phylogenetic diversity per sample)
+    comtab --> faithpd
 ```

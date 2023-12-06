@@ -1,0 +1,43 @@
+extra_fn_clean_exts:
+    - type: 'remove'
+      pattern: '.concat.R1'
+      module:
+        - cutadapt
+    - type: 'remove'
+      pattern: '.concat.R2'
+      module:
+        - cutadapt
+
+custom_data:
+  tax_classification:
+    section_name: "Taxonomic classification"
+    description: "ASVs classified in each stage of the taxonomic classification"
+    file_format: "tsv"
+    plot_type: "table"
+  pytransaln_minstops_per_seq:
+    parent_id: "pytransaln"
+    parent_name: "Screen ASVs for pseudogenes"
+    parent_description: "ASVs represent coding sequences; screen for pseudogenes by checking for in-frame stop codons and alignment with HMM."
+    section_name: "Minimum stop codons per ASV across three reading frames"
+    description: "Peak should be at zero. This checks that the correct genetic code has been specified, and that sequences are indeed coding sequences."
+  pytransaln_stops_per_frame:
+    parent_id: "pytransaln"
+    parent_name: "Screen ASVs for pseudogenes"
+    parent_description: "ASVs represent coding sequences; screen for pseudogenes by checking for in-frame stop codons and alignment with HMM."
+    section_name: "Stop codons per ASV per reading frame."
+    description: "If all ASVs are in the same frame, that frame should have peak at zero. This checks that the correct reading frame has been specified."
+  pytransaln_hmm_scores_perseq:
+    parent_id: "pytransaln"
+    parent_name: "Screen ASVs for pseudogenes"
+    parent_description: "ASVs represent coding sequences; screen for pseudogenes by checking for in-frame stop codons and alignment with HMM."
+    section_name: "HMM bit score distribution of translations vs. HMM of target protein"
+sp:
+  tax_classification:
+    fn: "stats_mqc.*"
+  pytransaln_hmm_scores_perseq:
+    fn: "*.screen_hist_hmm_mqc.json"
+  pytransaln_minstops_per_seq:
+    fn: "*.screen_hist_mins_mqc.json"
+  pytransaln_stops_per_frame:
+    fn: "*.screen_hist_spf_mqc.json"
+

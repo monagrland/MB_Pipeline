@@ -39,6 +39,8 @@ def arg():
         help="Sintax Cutoff for the hierarchical classification",
     )
     parser.add_argument("-o", "--output", help="Prefered name of the output file")
+    parser.add_argument("--krona", help="Path to write table to draw krona plot")
+    parser.add_argument("--stats_mqc", help="Path to write summary stats for MultiQC")
     parser.add_argument(
         "-n", "--threads", default=1, help="Number of threads to be used"
     )
@@ -356,7 +358,7 @@ def statistics(log, stats_table_path):
             direct_matches_lines.append(line)
         elif line.startswith("Classified"):
             hierarchical_matches_line = line
-        elif line.startswith("Reading file"):
+        elif line.startswith("Reading"):
             database_lst.append(os.path.basename(line.split()[2]))
 
     number_of_hits_lst = []
@@ -424,10 +426,8 @@ def main(args):
             taxonomy_sans_multihits = tax_from_samfile_df
             hits_df = hit_ASVs
         else:
-            taxonomy_sans_multihits = taxonomy_sans_multihits.append(
-                tax_from_samfile_df
-            )
-            hits_df = hits_df.append(hit_ASVs)
+            taxonomy_sans_multihits = pd.concat([taxonomy_sans_multihits, tax_from_samfile_df])
+            hits_df = pd.concat([hits_df, hit_ASVs])
         hits_df.to_csv(
             os.path.splitext(output)[0] + ".direct.full.txt",
             sep="\t",
@@ -441,8 +441,8 @@ def main(args):
     )
     if len(hits_df) > 0:
         formatted_direct_classification = taxonomy_sans_multihits
-        taxonomy_df = formatted_direct_classification.append(
-            formatted_hierarchical_classification, ignore_index=True
+        taxonomy_df = pd.concat(
+            [formatted_direct_classification, formatted_hierarchical_classification], ignore_index=True
         )
     else:
         taxonomy_df = formatted_hierarchical_classification
@@ -458,11 +458,10 @@ def main(args):
     taxonomy_df.to_csv(output, sep="\t")
     tax_df_for_krona = taxonomy_df.drop(["ASV"], axis=1)
     tax_df_for_krona.to_csv(
-        os.path.splitext(output)[0] + ".krona.txt", sep="\t", header=False, index=False
+        args['krona'], sep="\t", header=False, index=False
     )
 
-    statistics_file_path = f"{os.path.dirname(output)}/stats_mqc.csv"
-    statistics(logfile, statistics_file_path)
+    statistics(logfile, args['stats_mqc'])
 
     if not args['keep_results']:
         out_directory = os.path.dirname(output)
@@ -481,6 +480,8 @@ if __name__ == "__main__":
             "sintax_cutoff" : snakemake.params['hierarchical_threshold'],
             "ASVs" : snakemake.input['ASVs'],
             "output" : snakemake.output['base'],
+            "krona" : snakemake.output['krona'],
+            "stats_mqc" : snakemake.output['stats_mqc'],
             "threads" : snakemake.threads,
             "log" : snakemake.log[0],
         }

@@ -1,0 +1,135 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+description: "snakemake configuration for metabarcoding pipeline MB_Pipeline"
+type: object
+
+properties:
+  workdir:
+    type: string
+    description: "Path to working folder; other paths are relative to this unless specified as absolute paths"
+  reads_table:
+    type: string
+    description: "Path to TSV table of samples and read files"
+  paired:
+    type: boolean
+    default: true
+    description: "Are read files paired?"
+  protein_coding:
+    type: boolean
+    default: true
+    description: "Is target sequence protein-coding? If true, use pseudogene-filtering pipeline"
+  adapter_trimming_options:
+    type: object
+    description: "Options for adapter trimming with cutadapt"
+    properties:
+      5p:
+        type: string
+        description: "5-prime adapter sequence"
+      3p:
+        type: string
+        description: "3-prime adapter sequence, if paired end reads"
+      min_overlap:
+        type: integer
+        default: 23
+        description: "Minimum sequence overlap for trimming"
+      required:
+        - 5p
+        - min_overlap
+  merge_options:
+    type: array
+    description: "Options for merging paired end reads, passed to Vsearch"
+  filter_options:
+    type: array
+    description: "Options for quality filtering, passed to Vsearch"
+  coding:
+    type: object
+    description: "Parameters for coding sequences"
+    properties:
+      code:
+        type: integer
+        default: 5
+        enum: 
+          [1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15, 16, 21, 22, 23, 24, 25, 26, 29, 30, 33]
+        description: "NCBI translation table number, cannot be a stopless code (27, 28, 31)"
+      frame:
+        type: integer
+        default: 3
+        enum: [1, 2, 3]
+        description: "Reading frame: expected codon position of the first base"
+      hmm:
+        type: string
+        description: "Path to HMM file to screen translations; only first model in file will be used"
+  denoising:
+    type: object
+    description: "Parameters for denoising, applicable to either Unoise or DnoisE"
+    properties:
+      alpha:
+        type: integer
+        default: 5
+        description: "Clustering parameter alpha"
+      minsize:
+        type: integer
+        default: 8
+        description: "Minimum number of sequences in a cluster to be retained"
+      method:
+        type: string
+        default: "dnoise"
+        enum:
+          - "unoise"
+          - "dnoise"
+        description: "Which tool to use for denoising"
+      required:
+        - alpha
+        - minsize
+        - method
+  dnoise_opts:
+    type: object
+    description: "Options to pass to DnoisE"
+    properties:
+      alpha_range:
+        type: array
+        description: "Range of alpha values to test for entropy ratio diagnostics"
+      minsize_range:
+        type: array
+        description: "Range of minsize to test for entropy ratio diagnostics"
+  community_table_options:
+    type: array
+    description: "Options for community table, to pass to Vsearch"
+  treeprog:
+    type: string
+    default: "fasttree"
+    description: "Program to use to calculate phylogenetic tree"
+    enum:
+      - "fasttree"
+      - "iqtree"
+  direct_dbs:
+    type: array
+    description: "Paths to databases for direct taxonomic classification; either Fasta or UDB format"
+  hierarchical_db:
+    type: string
+    description: "Path to database for SINTAX classification of sequences that could not be directly classified; either Fasta or UDB format"
+  classification_threshold:
+    type: number
+    default: 0.97
+    maximum: 1
+    minimum: 0
+    description: "Minimum sequence identity for direct taxonomic classification"
+  hierarchical_threshold:
+    type: number
+    default: 0.8
+    maximum: 1
+    minimum: 0
+    description: "Minimum SINTAX support value to retain a taxonomic classification at a given rank"
+
+required:
+  - workdir
+  - reads_table
+  - paired
+  - protein_coding
+  - adapter_trimming_options
+  - filter_options
+  - denoising
+  - community_table_options
+  - treeprog
+  - classification_threshold
+  - hierarchical_threshold
+

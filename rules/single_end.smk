@@ -1,95 +1,66 @@
-rule cutadapt:
-	""" Rule to remove the Adapter Sequences from the reads """
+rule concat_libs_per_sample:
+	"""Concatenate multiple sequencing files from the same sample"""
 	input:
-		input_fw = os.path.join(config["directory"], "{basename}.gz"),
+		fw = lambda wildcards: reads_df[reads_df['sample'] == wildcards.sample]['fwd'],
+		# lambda wildcards: reads_df[reads_df['sample'] == wildcards.sample]['fwd'],
 	output:
-		temp(output_fw = os.path.join(config["output"], "01_trimmed_data/{basename}.gz")),
+		temp("01_trimmed/{sample}.concat.fastq.gz"), # TODO get file extension from input
+	shell:
+		"""
+		cat {input.fw} > {output};
+		"""
+
+rule cutadapt:
+	"""Remove adapter sequences from the reads"""
+	input:
+		"01_trimmed/{sample}.concat.fastq.gz", # TODO get file extension from input
+	output:
+		temp("01_trimmed/{sample}.trim.fastq.gz"),
 	params:
-		options = " ".join(config["adapter_trimming_options"]),
-		filename_fw = "{basename}.gz",
+		adapter_5p=config['adapter_trimming_options']['5p'],
+		min_overlap=config['adapter_trimming_options']['min_overlap'],
 	conda:
 		"../envs/mb_cutadapt.yaml"
 	threads: 1
-	message:
-		"Executing adapter trimming for {params.filename_fw}"
 	log:
-		os.path.join(config["output"], "logs/01_cutadapt/{basename}.txt")
+		"logs/01_cutadapt/{sample}.txt"
 	shell:
 		"""
-		cutadapt --cores {threads} {params.options} -o {output.output_fw} \
-		{input.input_fw} &>>  {log}
+		cutadapt --cores {threads} -g {params.adapter_5p} -O {params.min_overlap} \
+		-o {output} {input} &>>  {log}
 		"""
 
 rule relabel:
-	""" Rule for relabeling of the fastq headers """
+	"""Relabel Fastq headers"""
 	input:
-		os.path.join(config["output"], "01_trimmed_data/{basename}.gz"),
+		"01_trimmed/{sample}.trim.fastq.gz",
 	output:
-		temp(os.path.join(config["output"], "02_relabeled/{basename}"))
+		temp("02_relabeled/{sample}.fastq.gz")
 	params:
 		script_path = os.path.join(workflow.basedir, "scripts/relabel.py")
 	threads: 1
-	message:
-		"Relabeling FASTQ Headers"
 	shell:
 		"""
 		python3 {params.script_path} -i {input} -o {output}
 		"""
 
 rule quality_filter_single:
-	""" Rule for quality filtering """
+	"""Filter reads by quality scores"""
 	input:
-		os.path.join(config["output"], "02_relabeled/{basename}")
+		"02_relabeled/{sample}.fastq.gz"
 	output:
-		temp(os.path.join(config["output"], "03_filtered_data/{basename}.fasta"))
+		temp("03_filtered/{sample}.filtered.fasta")
 	params:
 		options = " ".join(config["filter_options"]),
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
-	message:
-		"Executing Quality Filtering"
 	log:
-		os.path.join(config["output"], "logs/03_quality_filtering/{basename}.txt")
+		"logs/03_quality_filtering/{sample}.txt"
 	shell:
 		"""
-		vsearch --threads {threads} --fastq_filter {input} {params.options} --fastaout {output} &>> {log}
+		vsearch --fastq_filter {input} {params.options} --fastaout {output} \
+		--threads {threads} &>> {log}
 		"""
 
-rule dereplicate:
-	""" Rule to remove duplicates and relabel the samples"""
-	input:
-		os.path.join(config["output"], "03_filtered_data/{basename}.fasta")
-	output:
-		temp(os.path.join(config["output"], "04_derep_data/{basename}.fasta"))
-	params:
-		filename = "{basename}.fasta",
-		options = " ".join(config["derep1_options"]),
-	conda:
-		"../envs/mb_vsearch.yaml"
-	threads: 1
-	message:
-		"Removing redundant reads for {params.filename}"
-	log:
-		os.path.join(config["output"], "logs/04_dereplicate/{basename}.txt")
-	shell:
-		"vsearch --threads {threads} --derep_fulllength {input} --output {output} {params.options} &>> {log}"
-
-rule concatenate:
-	""" Rule to concatenate all files into one """
-	input:
-		expand(
-			os.path.join(config["output"], "04_derep_data/{basename}.fasta"),
-			zip,
-			basename = files_single.basename,
-		)
-	output:
-		temp(os.path.join(config["output"], "05_concatenated_data/all_reads.fasta"))
-	params:
-		derep_dir = os.path.join(config["output"], "04_derep_data/")
-	message:
-		"Concatenating all reads"
-	log:
-		os.path.join(config["output"], "logs/05_concatenate/all_reads.txt")
-	shell:
-		"cat {params.derep_dir}*.fasta > {output} 2> {log}"
+# vim: set noexpandtab:

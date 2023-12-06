@@ -1,0 +1,19 @@
+$schema: "https://json-schema.org/draft/2020-12/schema"
+description: "Table with metadata and paths to read files for MB_Pipeline"
+type: object
+
+properties:
+  sample:
+    type: string
+    pattern: "^[^;= ]+$"
+    description: "Name or identifier for sample; should not have spaces or special characters used by downstream tools"
+  fwd:
+    type: string
+    description: "Path to forward read file (if paired end) or single read file"
+  rev:
+    type: string
+    description: "Path to reverse read file (if paired end)"
+
+required:
+  - sample
+  - fwd

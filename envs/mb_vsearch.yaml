@@ -3,4 +3,4 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - vsearch=2.17.1
+  - vsearch =2.23

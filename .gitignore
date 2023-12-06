@@ -1,6 +1,9 @@
 /.snakemake
 .Rhistory
+.swp
 run_debug.sh
 run_multiple.sh
 Dockerfile
 *_config_*.yaml
+/TODO
+/test

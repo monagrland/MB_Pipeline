@@ -1,0 +1,9 @@
+channels:
+  - nodefaults
+  - conda-forge
+  - bioconda
+dependencies:
+  - mafft =7.520
+  - pip
+  - pip:
+    - pytransaln==0.2.1

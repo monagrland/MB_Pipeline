@@ -1,12 +1,21 @@
 #!/bin/bash
-# A shell script to start the pipeline with the specified config file in the correct conda environment
+# Assumes that conda is in path, and that mamba and conda are in base environment
 eval "$(conda shell.bash hook)"
-conda env create -n mb_snakemake --file "$PWD/envs/mb_snakemake.yaml" #creates the conda environment if you have the correct permissions and if it doesnt exist yet.
+# Test for snakemake environment in current folder
+mamba list -p ./snakemake_8 &> /dev/null
+RETVAL=$?
+if [[ $RETVAL == 1 ]]
+then
+  echo "Creating environment with Snakemake at ./snakemake_8"
+  mamba env create -p ./snakemake_8 --file "$PWD/envs/mb_snakemake.yaml"
+else
+  echo "Environment with Snakemake found at ./snakemake_8"
+fi
 STARTTIME=$(date +%s)
-THREADS=4 # Specify total cores available here
-conda activate mb_snakemake
+CORES=12
+conda activate ./snakemake_8
 echo "Activated conda environment."
 echo "Starting the pipeline using $THREADS threads."
-snakemake --use-conda --cores $THREADS --conda-frontend conda --notemp --configfile $1
+snakemake --sdm conda --cores $CORES --conda-frontend mamba --notemp --configfile $1
 ENDTIME=$(date +%s)
 echo "It took $(($ENDTIME - $STARTTIME)) seconds to finish this run."

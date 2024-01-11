@@ -3,6 +3,4 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - snakemake-minimal >=8.1
-  - conda
-  - mamba >=1.0.0
+  - pandas >=2.0

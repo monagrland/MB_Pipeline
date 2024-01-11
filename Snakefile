@@ -1,3 +1,6 @@
+conda:
+	"envs/global.yaml"
+
 import os
 import json
 import pandas as pd

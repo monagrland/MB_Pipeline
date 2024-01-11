@@ -24,6 +24,7 @@ rule cutadapt:
 		adapter_5p=config['adapter_trimming_options']['5p'],
 		adapter_3p=config['adapter_trimming_options']['3p'],
 		min_overlap=config['adapter_trimming_options']['min_overlap'],
+		others_common=config['adapter_trimming_options']['others_common'],
 	conda:
 		"../envs/mb_cutadapt.yaml"
 	threads: 1
@@ -33,6 +34,7 @@ rule cutadapt:
 		"""
 		cutadapt --cores {threads} \
 		-g {params.adapter_5p} -G {params.adapter_3p} -O {params.min_overlap} \
+		{params.others_common} \
 		-o {output.fw} -p {output.rv} {input.fw} {input.rv} &>>  {log}
 		"""
 

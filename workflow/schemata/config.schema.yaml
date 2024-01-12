@@ -1,11 +1,8 @@
 $schema: "https://json-schema.org/draft/2020-12/schema"
-description: "snakemake configuration for metabarcoding pipeline MB_Pipeline"
+description: "Snakemake configuration for metabarcoding pipeline MB_Pipeline"
 type: object
 
 properties:
-  # workdir:
-  #   type: string
-  #   description: "Path to working folder; other paths are relative to this unless specified as absolute paths"
   reads_table:
     type: string
     description: "Path to TSV table of samples and read files"
@@ -31,6 +28,9 @@ properties:
         type: integer
         default: 23
         description: "Minimum sequence overlap for trimming"
+      others_common:
+        type: string
+        description: "Other command line params passed verbatim to cutadapt, for both single and paired end reads"
       required:
         - 5p
         - min_overlap
@@ -121,7 +121,6 @@ properties:
     description: "Minimum SINTAX support value to retain a taxonomic classification at a given rank"
 
 required:
-  # - workdir
   - reads_table
   - paired
   - protein_coding

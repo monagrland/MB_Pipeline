@@ -7,7 +7,7 @@ RETVAL=$?
 if [[ $RETVAL == 1 ]]
 then
   echo "Creating environment with Snakemake at ./snakemake_8"
-  mamba env create -p ./snakemake_8 --file "$PWD/envs/mb_snakemake.yaml"
+  mamba env create -p ./snakemake_8 --file "$PWD/workflow/envs/snakemake.yaml"
 else
   echo "Environment with Snakemake found at ./snakemake_8"
 fi

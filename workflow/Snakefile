@@ -1,5 +1,5 @@
 conda:
-	"envs/global.yaml"
+    "envs/global.yaml"
 
 import os
 import json
@@ -12,40 +12,45 @@ from snakemake.utils import validate
 validate(config, "schemata/config.schema.yaml")
 
 # workdir : config['workdir']
-reads_df = pd.read_table(config['reads_table'], sep="\t")
+reads_df = pd.read_table(config["reads_table"], sep="\t")
 validate(reads_df, "schemata/reads_df.schema.yaml")
 reads_df = reads_df.set_index("sample", drop=False)
-samples = reads_df['sample'].drop_duplicates()
+samples = reads_df["sample"].drop_duplicates()
 
 if config["paired"]:
-	include:
-		"rules/paired_end.smk"
+
+    include: "rules/paired_end.smk"
+
 elif not config["paired"]:
-	include:
-		"rules/single_end.smk"
+
+    include: "rules/single_end.smk"
+
 
 include: "rules/common.smk"
 include: "rules/coding.smk"
 
+
 if config["protein_coding"]:
-	screening="no_pseudogenes"
+    screening = "no_pseudogenes"
 else:
-	screening="no_chimeras"
+    screening = "no_chimeras"
+
 
 rule all:
-	input:
-		# "logs/config_file.yaml",
-		expand(
-			[
-				"results/10_taxonomy/krona_plot.{method}.{screening}.html",
-				"results/11_merged/community_and_tax_merged.{method}.{screening}.txt",
-				"results/12_report/multiqc_report.{method}.{screening}.html",
-				"results/13_phylogeny/ASVs_{method}.{screening}.{treeprog}.faiths_pd.tsv",
-			],
-			method=config['denoising']['method'],
-			screening=screening,
-			treeprog=config['treeprog'],
-		),
+    input:
+        # "logs/config_file.yaml",
+        expand(
+            [
+                "results/10_taxonomy/krona_plot.{method}.{screening}.html",
+                "results/11_merged/community_and_tax_merged.{method}.{screening}.txt",
+                "results/12_report/multiqc_report.{method}.{screening}.html",
+                "results/13_phylogeny/ASVs_{method}.{screening}.{treeprog}.faiths_pd.tsv",
+            ],
+            method=config["denoising"]["method"],
+            screening=screening,
+            treeprog=config["treeprog"],
+        ),
+
 
 # rule save_config:
 # 	""" Rule to save the config file in the logs directory """
@@ -56,5 +61,3 @@ rule all:
 # 	run:
 # 		with open(output.config_file_out, "w") as file:
 # 			yaml.dump(config, file)
-
-# vim: set noexpandtab:

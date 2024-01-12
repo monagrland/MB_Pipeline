@@ -2,7 +2,6 @@ rule concat_libs_per_sample:
 	"""Concatenate multiple sequencing files from the same sample"""
 	input:
 		fw = lambda wildcards: reads_df[reads_df['sample'] == wildcards.sample]['fwd'],
-		# lambda wildcards: reads_df[reads_df['sample'] == wildcards.sample]['fwd'],
 	output:
 		temp("results/01_trimmed/{sample}.concat.fastq.gz"), # TODO get file extension from input
 	shell:

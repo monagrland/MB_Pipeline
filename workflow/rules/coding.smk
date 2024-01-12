@@ -99,7 +99,6 @@ rule plot_entropy_ratio_vs_minsize:
 	params: # TODO update script arguments
 		alphas=",".join([str(i) for i in config['dnoise_opts']['minsize_range']]),
 		inputs=lambda wildcards, input: ",".join(input),
-		# script_path = os.path.join(workflow.basedir, "scripts/plot_entropy_ratio.py"),
 	conda:
 		"../envs/mb_dnoise.yaml"
 	script: "../scripts/plot_entropy_ratio.py"

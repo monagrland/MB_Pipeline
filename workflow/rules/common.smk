@@ -241,7 +241,6 @@ rule taxonomy:
 	params:
 		keep_results = True,
 		hierarchical_threshold = config["hierarchical_threshold"],
-		# script_path = os.path.join(workflow.basedir, "scripts/multilvl_taxonomic_classification.py")
 	threads: workflow.cores
 	message:
 		"Starting Multilevel Taxonomic Classification"

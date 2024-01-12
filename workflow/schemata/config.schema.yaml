@@ -3,9 +3,9 @@ description: "snakemake configuration for metabarcoding pipeline MB_Pipeline"
 type: object
 
 properties:
-  workdir:
-    type: string
-    description: "Path to working folder; other paths are relative to this unless specified as absolute paths"
+  # workdir:
+  #   type: string
+  #   description: "Path to working folder; other paths are relative to this unless specified as absolute paths"
   reads_table:
     type: string
     description: "Path to TSV table of samples and read files"
@@ -121,7 +121,7 @@ properties:
     description: "Minimum SINTAX support value to retain a taxonomic classification at a given rank"
 
 required:
-  - workdir
+  # - workdir
   - reads_table
   - paired
   - protein_coding

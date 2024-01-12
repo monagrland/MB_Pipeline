@@ -1,7 +1,7 @@
-workdir: # Path to working folder
-  "test"
+# workdir: # Path to working folder
+#   "test"
 reads_table: # Table of samples and read files; path is relative to workdir
-  "reads.tsv"
+  "test/reads.tsv"
 paired: true           # true or false only
 protein_coding: true   # true or false only
 
@@ -27,7 +27,7 @@ coding:
   code: 5   # NCBI translation table number
   frame: 3  # Expected codon position (1, 2, or 3) of the first base
   hmm:      # HMM to screen translations, path relative to workdir
-    "db/bold_arthropod.hmm"
+    "test/db/bold_arthropod.hmm"
 
 # Denoising - Update these default values after viewing diagnostics
 denoising:
@@ -50,9 +50,9 @@ treeprog: "fasttree" # Options: fasttree, iqtree
 
 # Taxonomic classification
 direct_dbs: # Path is relative to workdir
-  - "db/bold_coi-5p_test.fasta"
+  - "test/db/bold_coi-5p_test.fasta"
 hierarchical_db:
-  "db/bold_coi-5p_test.fasta"
+  "test/db/bold_coi-5p_test.fasta"
 classification_threshold: 0.90
 hierarchical_threshold: 0.8
 

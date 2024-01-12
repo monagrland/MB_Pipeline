@@ -9,10 +9,10 @@ properties:
     description: "Name or identifier for sample; should not have spaces or special characters used by downstream tools"
   fwd:
     type: string
-    description: "Path to forward read file (if paired end) or single read file"
+    description: "Path to forward read file (if paired end) or single read file, relative to Snakemake working directory"
   rev:
     type: string
-    description: "Path to reverse read file (if paired end)"
+    description: "Path to reverse read file (if paired end), relative to Snakemake working directory"
 
 required:
   - sample

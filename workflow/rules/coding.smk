@@ -4,9 +4,9 @@ rule rename_headers_for_dnoise:
 	Input file to dnoise can have only one ; char in Fasta headers
 	"""
 	input:
-		"06_derep/unique_reads.fasta"
+		"results/06_derep/unique_reads.fasta"
 	output:
-		"06_derep/unique_reads_rename.fasta"
+		"results/06_derep/unique_reads_rename.fasta"
 	threads: 1
 	shell:
 		"sed 's/;sample/_sample/' {input} | sed 's/;ee/_ee/' > {output};"
@@ -20,13 +20,13 @@ rule denoising_dnoise:
 	values in config file to rerun if necessary.
 	"""
 	input:
-		"06_derep/unique_reads_rename.fasta"
+		"results/06_derep/unique_reads_rename.fasta"
 	output:
-		denoised="07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.fasta"
+		denoised="results/07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.fasta"
 	conda:
 		"../envs/mb_dnoise.yaml"
 	params:
-		prefix=lambda wildcards: f"07_ASVs/ASVs_{wildcards.alpha}",
+		prefix=lambda wildcards: f"results/07_ASVs/ASVs_{wildcards.alpha}",
 		frame=config['coding']["frame"],
 	threads: 4
 	message:
@@ -69,7 +69,7 @@ rule plot_entropy_ratio_vs_alpha:
 	"""
 	input:
 		expand(
-			"07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d_entropy_values.csv",
+			"results/07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d_entropy_values.csv",
 			alpha=config['dnoise_opts']["alpha_range"]
 		)
 	output:
@@ -90,7 +90,7 @@ rule plot_entropy_ratio_vs_minsize:
 	"""
 	input:
 		expand(
-			"07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}_entropy_values.csv",
+			"results/07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}_entropy_values.csv",
 			minsize=config['dnoise_opts']['minsize_range'],
 			alpha=config["denoising"]['alpha'],
 		)
@@ -99,20 +99,20 @@ rule plot_entropy_ratio_vs_minsize:
 	params: # TODO update script arguments
 		alphas=",".join([str(i) for i in config['dnoise_opts']['minsize_range']]),
 		inputs=lambda wildcards, input: ",".join(input),
-		script_path = os.path.join(workflow.basedir, "scripts/plot_entropy_ratio.py"),
+		# script_path = os.path.join(workflow.basedir, "scripts/plot_entropy_ratio.py"),
 	conda:
 		"../envs/mb_dnoise.yaml"
-	script: "{params.script_path}"
+	script: "../scripts/plot_entropy_ratio.py"
 
 rule rename_denoised_ASVs:
 	input:
 		expand(
-			"07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}.fasta",
+			"results/07_ASVs/ASVs_{alpha}_Adcorr_denoised_ratio_d.minsize_{minsize}.fasta",
 			alpha=config["denoising"]['alpha'],
 			minsize=config['denoising']["minsize"]
 		)
 	output:
-		"07_ASVs/ASVs_dnoise.fasta"
+		"results/07_ASVs/ASVs_dnoise.fasta"
 	conda: "../envs/mb_vsearch.yaml"
 	log: "logs/07_ASVs/rename_denoise_ASVs.log"
 	threads: 1
@@ -125,17 +125,17 @@ rule rename_denoised_ASVs:
 rule screen_pseudogenes:
 	"""Remove sequences that have in frame stops and/or fail HMM screen"""
 	input:
-		"07_ASVs/ASVs_{method}.fasta"
+		"results/07_ASVs/ASVs_{method}.fasta"
 	output:
-		screened="08_ASVs_screened/ASVs_{method}.no_pseudogenes.fasta",
-		stats="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_stats.tsv",
-		hmmsearch="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hmmsearch.out",
-		hist_hmm="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_hmm.png",
-		hist_spf="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_spf.png",
-		hist_mins="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_mins.png",
-		mqc_hmm="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_hmm_mqc.json",
-		mqc_spf="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_spf_mqc.json",
-		mqc_mins="08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_mins_mqc.json",
+		screened="results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.fasta",
+		stats="results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_stats.tsv",
+		hmmsearch="results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hmmsearch.out",
+		hist_hmm="results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_hmm.png",
+		hist_spf="results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_spf.png",
+		hist_mins="results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_mins.png",
+		mqc_hmm="results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_hmm_mqc.json",
+		mqc_spf="results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_spf_mqc.json",
+		mqc_mins="results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_mins_mqc.json",
 	wildcard_constraints:
 		method=r"[a-z]+"
 	conda: "../envs/mb_pseudogenes.yaml"

@@ -17,9 +17,9 @@ rule quality_filter_mqc:
 rule dereplicate:
 	"""Remove duplicates in each read file"""
 	input:
-		"03_filtered/{sample}.filtered.fasta",
+		"results/03_filtered/{sample}.filtered.fasta",
 	output:
-		temp("04_derep/{sample}.derep.fasta"),
+		temp("results/04_derep/{sample}.derep.fasta"),
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: 1
@@ -46,9 +46,9 @@ rule dereplicate_mqc:
 rule concat_samples:
 	"""Concatenate reads from all samples into single file"""
 	input:
-		expand("04_derep/{sample}.derep.fasta", sample=samples)
+		expand("results/04_derep/{sample}.derep.fasta", sample=samples)
 	output:
-		temp("05_concat/all_reads.fasta")
+		temp("results/05_concat/all_reads.fasta")
 	log:
 		"logs/05_concat/all_reads.txt"
 	shell:
@@ -57,9 +57,9 @@ rule concat_samples:
 rule dereplicate_2:
 	"""Remove exact duplicates in concatenated reads"""
 	input:
-		"05_concat/all_reads.fasta"
+		"results/05_concat/all_reads.fasta"
 	output:
-		"06_derep/unique_reads.fasta"
+		"results/06_derep/unique_reads.fasta"
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: workflow.cores
@@ -80,9 +80,9 @@ rule denoising_unoise:
 	minsize parameters in the config file.
 	"""
 	input:
-		"06_derep/unique_reads.fasta"
+		"results/06_derep/unique_reads.fasta"
 	output:
-		"07_ASVs/ASVs_unoise.fasta"
+		"results/07_ASVs/ASVs_unoise.fasta"
 	params:
 		alpha=config['denoising']['alpha'],
 		minsize=config['denoising']["minsize"],
@@ -128,9 +128,9 @@ rule remove_chimeras:
 	pseudogene removal and HMM screening step should also remove PCR chimeras.
 	"""
 	input:
-		"07_ASVs/ASVs_{method}.fasta"
+		"results/07_ASVs/ASVs_{method}.fasta"
 	output:
-		"08_ASVs_screened/ASVs_{method}.no_chimeras.fasta"
+		"results/08_ASVs_screened/ASVs_{method}.no_chimeras.fasta"
 	conda:
 		"../envs/mb_vsearch.yaml"
 	threads: workflow.cores
@@ -147,11 +147,11 @@ rule remove_chimeras:
 rule generate_community_table:
 	"""Map reads to ASVs and generate counts per ASV per sample"""
 	input:
-		search = "05_concat/all_reads.fasta",
-		db = "08_ASVs_screened/ASVs_{method}.{screening}.fasta"
+		search = "results/05_concat/all_reads.fasta",
+		db = "results/08_ASVs_screened/ASVs_{method}.{screening}.fasta"
 	output:
-		community_table = "09_community_table/community_table.{method}.{screening}.txt",
-		community_table_biom = "09_community_table/community_table.{method}.{screening}.biom",
+		community_table = "results/09_community_table/community_table.{method}.{screening}.txt",
+		community_table_biom = "results/09_community_table/community_table.{method}.{screening}.biom",
 	params:
 		options = " ".join(config["community_table_options"]),
 	conda:
@@ -186,8 +186,8 @@ rule strip_size_info:
 		"""
 
 rule align_screened_asvs:
-	input: "08_ASVs_screened/ASVs_{method}.{screening}.nosize.fasta"
-	output: "13_phylogeny/ASVs_{method}.{screening}.mafft"
+	input: "results/08_ASVs_screened/ASVs_{method}.{screening}.nosize.fasta"
+	output: "results/13_phylogeny/ASVs_{method}.{screening}.mafft"
 	conda: "../envs/mb_phylogeny.yaml"
 	log: "logs/13_phylogeny/align_screened_asvs.{method}.{screening}.log"
 	threads: 8
@@ -197,8 +197,8 @@ rule align_screened_asvs:
 		"""
 
 rule fasttree_screened_asvs:
-	input: "13_phylogeny/ASVs_{method}.{screening}.mafft"
-	output: "13_phylogeny/ASVs_{method}.{screening}.fasttree.treefile"
+	input: "results/13_phylogeny/ASVs_{method}.{screening}.mafft"
+	output: "results/13_phylogeny/ASVs_{method}.{screening}.fasttree.treefile"
 	conda: "../envs/mb_phylogeny.yaml"
 	log: "logs/13_phylogeny/align_screened_asvs.{method}.{screening}.fasttree.log"
 	threads: 1
@@ -208,12 +208,12 @@ rule fasttree_screened_asvs:
 		"""
 
 rule iqtree_screened_asvs:
-	input: "13_phylogeny/ASVs_{method}.{screening}.mafft"
-	output: "13_phylogeny/ASVs_{method}.{screening}.treefile"
+	input: "results/13_phylogeny/ASVs_{method}.{screening}.mafft"
+	output: "results/13_phylogeny/ASVs_{method}.{screening}.treefile"
 	conda: "../envs/mb_phylogeny.yaml"
 	log: "logs/13_phylogeny/align_screened_asvs.{method}.{screening}.iqtree.log"
 	params:
-		prefix="13_phylogeny/ASVs_{method}.{screening}.iqtree",
+		prefix="results/13_phylogeny/ASVs_{method}.{screening}.iqtree",
 	threads: 8
 	shell:
 		"""
@@ -222,28 +222,26 @@ rule iqtree_screened_asvs:
 
 rule faiths_pd:
 	input:
-		tree = "13_phylogeny/ASVs_{method}.{screening}.{treeprog}.treefile",
-		biom = "09_community_table/community_table.{method}.{screening}.biom",
+		tree = "results/13_phylogeny/ASVs_{method}.{screening}.{treeprog}.treefile",
+		biom = "results/09_community_table/community_table.{method}.{screening}.biom",
 	output:
-		"13_phylogeny/ASVs_{method}.{screening}.{treeprog}.faiths_pd.tsv"
+		"results/13_phylogeny/ASVs_{method}.{screening}.{treeprog}.faiths_pd.tsv"
 	conda: "../envs/mb_phylogeny.yaml"
-	params:
-		script_path = os.path.join(workflow.basedir, "scripts/faiths_pd.py")
-	script: "{params.script_path}"
+	script: "../scripts/faiths_pd.py"
 
 
 rule taxonomy:
 	"""Assign taxonomy to ASVs with two-step taxonomic classification method"""
 	input:
-		ASVs = "08_ASVs_screened/ASVs_{method}.{screening}.fasta"
+		ASVs = "results/08_ASVs_screened/ASVs_{method}.{screening}.fasta"
 	output:
-		base = "10_taxonomy/taxonomy.{method}.{screening}.txt",
-		krona = "10_taxonomy/taxonomy.{method}.{screening}.krona.txt",
-		stats_mqc = "10_taxonomy/stats_mqc.{method}.{screening}.csv"
+		base = "results/10_taxonomy/taxonomy.{method}.{screening}.txt",
+		krona = "results/10_taxonomy/taxonomy.{method}.{screening}.krona.txt",
+		stats_mqc = "results/10_taxonomy/stats_mqc.{method}.{screening}.csv"
 	params:
 		keep_results = True,
 		hierarchical_threshold = config["hierarchical_threshold"],
-		script_path = os.path.join(workflow.basedir, "scripts/multilvl_taxonomic_classification.py")
+		# script_path = os.path.join(workflow.basedir, "scripts/multilvl_taxonomic_classification.py")
 	threads: workflow.cores
 	message:
 		"Starting Multilevel Taxonomic Classification"
@@ -251,14 +249,14 @@ rule taxonomy:
 		"../envs/mb_taxonomy.yaml"
 	log: # TODO how to redirect script print output?
 		"logs/10_taxonomy/taxonomy.{method}.{screening}.log"
-	script: "{params.script_path}"
+	script: "../scripts/multilvl_taxonomic_classification.py"
 
 rule krona:
 	"""Render Krona plot of the taxonomic summary"""
 	input:
-		"10_taxonomy/taxonomy.{method}.{screening}.krona.txt"
+		"results/10_taxonomy/taxonomy.{method}.{screening}.krona.txt"
 	output:
-		"10_taxonomy/krona_plot.{method}.{screening}.html"
+		"results/10_taxonomy/krona_plot.{method}.{screening}.html"
 	conda:
 		"../envs/mb_krona.yaml"
 	message:
@@ -269,10 +267,10 @@ rule krona:
 rule merge_tables:
 	"""Combine ASV counts per sample with taxonomy"""
 	input:
-		community_table = "09_community_table/community_table.{method}.{screening}.txt",
-		tax_table = "10_taxonomy/taxonomy.{method}.{screening}.txt",
+		community_table = "results/09_community_table/community_table.{method}.{screening}.txt",
+		tax_table = "results/10_taxonomy/taxonomy.{method}.{screening}.txt",
 	output:
-		merged_table = "11_merged/community_and_tax_merged.{method}.{screening}.txt"
+		merged_table = "results/11_merged/community_and_tax_merged.{method}.{screening}.txt"
 	message:
 		"Merging community and taxonomy Tables"
 	run:
@@ -289,7 +287,7 @@ rule merge_tables:
 
 def mqc_files(paired, coding):
 	out = [
-		"10_taxonomy/stats_mqc.{method}.{screening}.csv",
+		"results/10_taxonomy/stats_mqc.{method}.{screening}.csv",
 		"logs/vsearch_fastq_filter._mqc.json",
 		"logs/vsearch_derep_fulllength._mqc.json"
 	]
@@ -298,20 +296,20 @@ def mqc_files(paired, coding):
 	if coding:
 		out.extend(
 			[
-				"08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_hmm_mqc.json",
-				"08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_spf_mqc.json",
-				"08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_mins_mqc.json",
+				"results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_hmm_mqc.json",
+				"results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_spf_mqc.json",
+				"results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_mins_mqc.json",
 			]
 		)
 	return out
 
 rule generate_report:
 	input:
-		community_table = "09_community_table/community_table.{method}.{screening}.txt",
-		custom_mqc_config = os.path.join(workflow.basedir, "config/multiqc_config.yaml"),
+		community_table = "results/09_community_table/community_table.{method}.{screening}.txt",
+		custom_mqc_config = "config/multiqc_config.yaml", # TODO
 		mqc_files = mqc_files(config['paired'], config['protein_coding']),
 	output:
-		"12_report/multiqc_report.{method}.{screening}.html"
+		"results/12_report/multiqc_report.{method}.{screening}.html"
 	conda:
 		"../envs/mb_multiqc.yaml"
 	params:

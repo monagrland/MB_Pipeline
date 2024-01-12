@@ -4,8 +4,8 @@ rule concat_libs_per_sample:
 		fw = lambda wildcards: reads_df[reads_df['sample'] == wildcards.sample]['fwd'],
 		rv = lambda wildcards: reads_df[reads_df['sample'] == wildcards.sample]['rev'],
 	output:
-		fw = temp("01_trimmed/{sample}.concat.R1.fastq.gz"), # TODO get file extension from input
-		rv = temp("01_trimmed/{sample}.concat.R2.fastq.gz"),
+		fw = temp("results/01_trimmed/{sample}.concat.R1.fastq.gz"), # TODO get file extension from input
+		rv = temp("results/01_trimmed/{sample}.concat.R2.fastq.gz"),
 	shell:
 		"""
 		cat {input.fw} > {output.fw};
@@ -15,11 +15,11 @@ rule concat_libs_per_sample:
 rule cutadapt:
 	"""Remove adapter sequences from the reads"""
 	input:
-		fw = "01_trimmed/{sample}.concat.R1.fastq.gz",
-		rv = "01_trimmed/{sample}.concat.R2.fastq.gz"
+		fw = "results/01_trimmed/{sample}.concat.R1.fastq.gz",
+		rv = "results/01_trimmed/{sample}.concat.R2.fastq.gz"
 	output:
-		fw = temp("01_trimmed/{sample}.trim.R1.fastq.gz"),
-		rv = temp("01_trimmed/{sample}.trim.R2.fastq.gz")
+		fw = temp("results/01_trimmed/{sample}.trim.R1.fastq.gz"),
+		rv = temp("results/01_trimmed/{sample}.trim.R2.fastq.gz")
 	params:
 		adapter_5p=config['adapter_trimming_options']['5p'],
 		adapter_3p=config['adapter_trimming_options']['3p'],
@@ -41,10 +41,10 @@ rule cutadapt:
 rule merge:
 	"""Merge paired end reads to a single file"""
 	input:
-		fw = "01_trimmed/{sample}.trim.R1.fastq.gz",
-		rv = "01_trimmed/{sample}.trim.R2.fastq.gz"
+		fw = "results/01_trimmed/{sample}.trim.R1.fastq.gz",
+		rv = "results/01_trimmed/{sample}.trim.R2.fastq.gz"
 	output:
-		temp("02_merged/{sample}.merged.fastq.gz"),
+		temp("results/02_merged/{sample}.merged.fastq.gz"),
 	params:
 		options = " ".join(config["merge_options"]),
 	conda:
@@ -75,9 +75,9 @@ rule merge_mqc:
 rule quality_filter:
 	"""Filter reads by quality scores"""
 	input:
-		"02_merged/{sample}.merged.fastq.gz",
+		"results/02_merged/{sample}.merged.fastq.gz",
 	output:
-		temp("03_filtered/{sample}.filtered.fasta"),
+		temp("results/03_filtered/{sample}.filtered.fasta"),
 	params:
 		options = " ".join(config["filter_options"]),
 	conda:

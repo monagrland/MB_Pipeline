@@ -1,20 +1,34 @@
-# workdir: # Path to working folder
-#   "test"
-reads_table: # Table of samples and read files; path is relative to workdir
-  "test/reads.tsv"
-paired: true           # true or false only
-protein_coding: true   # true or false only
+# General configuration --------------------------------------------------------
+#
+# Table of samples and read files; path is relative to workdir
+reads_table: 
+  "config/reads.tsv"
 
+# Are input reads paired?
+# "true" or "false" only
+paired: true
+
+# Is target sequence protein-coding?
+# "true" or "false" only
+protein_coding: true
+
+# Read trimming, merging, and filtering ----------------------------------------
+
+# Adapter trimming options, passed to cutadapt
 adapter_trimming_options:
   5p: "CCNGAYATRGCNTTTYCCNCG"
   3p: "TANACYTCNGGRTGNCCRAARAAYCA"
   min_overlap: 23
   others_common: "--minimum-length 1"
+
+# Read merging options, passed to vsaerch - For paired reads only
 merge_options:
   - "--fastq_allowmergestagger"
   - "--fastq_minovlen 100"
   - "--fastq_maxdiffs 15"
   - "--fastq_eeout"
+
+# Merged read filtering options, passed to vsearch
 filter_options:
   - "--fastq_maxee 1.0"
   - "--fastq_minlen 100"
@@ -22,14 +36,17 @@ filter_options:
   - "--fastq_maxns 0"
   - "--fasta_width 0"
 
-# Coding sequences only
+# Coding sequences only --------------------------------------------------------
+#
 coding:
   code: 5   # NCBI translation table number
   frame: 3  # Expected codon position (1, 2, or 3) of the first base
   hmm:      # HMM to screen translations, path relative to workdir
     "test/db/bold_arthropod.hmm"
 
-# Denoising - Update these default values after viewing diagnostics
+# Denoising --------------------------------------------------------------------
+# Update these default values after viewing diagnostics
+#
 denoising:
   alpha : 5        # Clustering parameter alpha used for Unoise or DnoisE
   minsize : 8      # Minimum sequence cluster size to retain
@@ -42,17 +59,23 @@ dnoise_opts:
   minsize_range:   # Range of minsize to test for entropy ratio diagnostics
     [2,10]
 
+# Community table summary ------------------------------------------------------
+#
 community_table_options:
   - "--id 0.97"
   - "--strand plus"
 
+# Taxonomic classification -----------------------------------------------------
+#
 treeprog: "fasttree" # Options: fasttree, iqtree
 
-# Taxonomic classification
 direct_dbs: # Path is relative to workdir
   - "test/db/bold_coi-5p_test.fasta"
+
 hierarchical_db:
   "test/db/bold_coi-5p_test.fasta"
+
 classification_threshold: 0.90
+
 hierarchical_threshold: 0.8
 

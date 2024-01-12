@@ -1,3 +1,8 @@
+from snakemake.utils import validate, min_version
+
+min_version("8.1")
+validate(config, "schemata/config.schema.yaml")
+
 conda:
     "envs/global.yaml"
 
@@ -7,9 +12,6 @@ import pandas as pd
 import csv
 import gzip
 import yaml
-from snakemake.utils import validate
-
-validate(config, "schemata/config.schema.yaml")
 
 # workdir : config['workdir']
 reads_df = pd.read_table(config["reads_table"], sep="\t")

@@ -11,9 +11,7 @@ import json
 import pandas as pd
 import csv
 import gzip
-import yaml
 
-# workdir : config['workdir']
 reads_df = pd.read_table(config["reads_table"], sep="\t")
 validate(reads_df, "schemata/reads_df.schema.yaml")
 reads_df = reads_df.set_index("sample", drop=False)
@@ -40,7 +38,6 @@ else:
 
 rule all:
     input:
-        # "logs/config_file.yaml",
         expand(
             [
                 "results/10_taxonomy/krona_plot.{method}.{screening}.html",
@@ -52,14 +49,3 @@ rule all:
             screening=screening,
             treeprog=config["treeprog"],
         ),
-
-
-# rule save_config:
-# 	""" Rule to save the config file in the logs directory """
-# 	output:
-# 		config_file_out = "logs/config_file.yaml"
-# 	message:
-# 		"Saving config file to log directory"
-# 	run:
-# 		with open(output.config_file_out, "w") as file:
-# 			yaml.dump(config, file)

@@ -42,7 +42,7 @@ coding:
   code: 5   # NCBI translation table number
   frame: 3  # Expected codon position (1, 2, or 3) of the first base
   hmm:      # HMM to screen translations, path relative to workdir
-    "test/db/bold_arthropod.hmm"
+    "testdata/db/bold_arthropod.hmm"
 
 # Denoising --------------------------------------------------------------------
 # Update these default values after viewing diagnostics
@@ -70,10 +70,10 @@ community_table_options:
 treeprog: "fasttree" # Options: fasttree, iqtree
 
 direct_dbs: # Path is relative to workdir
-  - "test/db/bold_coi-5p_test.fasta"
+  - "testdata/db/bold_coi-5p_test.fasta"
 
 hierarchical_db:
-  "test/db/bold_coi-5p_test.fasta"
+  "testdata/db/bold_coi-5p_test.fasta"
 
 classification_threshold: 0.90
 

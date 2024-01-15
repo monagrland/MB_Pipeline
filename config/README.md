@@ -234,8 +234,7 @@ the sequence header, which is described in the VSEARCH manual:
 > of that rank. Commas and semicolons are not allowed in the name of the rank.
 >
 > Example:
-> ">X80725_S000004313;tax=d:Bacteria,p:Proteobacteria,c:Gammaproteobacteria,o:En-
-> terobacteriales,f:Enterobacteriaceae,g:Escherichia/Shigella,s:Escherichia_coli".
+> ">X80725_S000004313;tax=d:Bacteria,p:Proteobacteria,c:Gammaproteobacteria,o:Enterobacteriales,f:Enterobacteriaceae,g:Escherichia/Shigella,s:Escherichia_coli".
 
 The database can also be already pre-formatted into UDB format with the
 `--makeudb_usearch` option in VSEARCH.  For large databases, preparing a UDB
@@ -244,10 +243,10 @@ file is faster, as it avoids re-indexing every time the pipeline is run.
 ```yaml
 
 direct_dbs: # Path is relative to workdir
-  - "test/db/bold_coi-5p_test.fasta"
+  - "testdata/db/bold_coi-5p_test.fasta"
 
 hierarchical_db:
-  "test/db/bold_coi-5p_test.fasta"
+  "testdata/db/bold_coi-5p_test.fasta"
 ```
 
 

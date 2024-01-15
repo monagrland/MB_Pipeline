@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # Assumes that conda is in path, and that mamba and conda are in base environment
 eval "$(conda shell.bash hook)"
 # Test for snakemake environment in current folder
@@ -16,6 +17,6 @@ CORES=12
 conda activate ./snakemake_8
 echo "Activated conda environment."
 echo "Starting the pipeline using $THREADS threads."
-snakemake --sdm conda --cores $CORES --conda-frontend mamba --notemp --configfile $1
+snakemake --sdm conda --cores $CORES --conda-frontend mamba --notemp --configfile config/config.yaml
 ENDTIME=$(date +%s)
 echo "It took $(($ENDTIME - $STARTTIME)) seconds to finish this run."

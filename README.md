@@ -9,10 +9,11 @@ Krueger, with contributions from Brandon Seah.
 
 The Pipeline is managed by [Snakemake](https://snakemake.readthedocs.io/) and
 uses various tools, which are specified in Conda environment files in the
-`workflow/envs` directory. All that is needed to start the pipeline is a current version
-of [Conda](https://docs.conda.io/). When the pipeline is run for the first
-time, the required software is automatically installed in Conda environments.
-[Mamba](https://mamba.readthedocs.io/) can be used as an alternative to Conda.
+`workflow/envs` directory. All that is needed to start the pipeline is a
+current version of [Conda](https://docs.conda.io/). When the pipeline is run
+for the first time, the required software is automatically installed in Conda
+environments. [Mamba](https://mamba.readthedocs.io/) can be used as an
+alternative to Conda.
 
 Input data should be short-read metabarcoding sequence data (paired- or
 single-end) in Fastq or gzipped Fastq format. File paths and pipeline
@@ -71,8 +72,9 @@ The pipeline options and input/output paths are declared in a configuration
 file `config/config.yaml` and table `config/reads.tsv` respectively. These
 should be modified to match the actual data and analysis you want to perform.
 
-The sample files provided are configured to run the test dataset in the `test/`
-subfolder without further modification, and can be used to test the pipeline.
+The sample files provided are configured to run the test dataset in the
+`testdata/` subfolder without further modification, and can be used to test the
+pipeline.
 
 Configuration options are described in the `config/README.md` file.
 
@@ -91,12 +93,12 @@ The script first installs Snakemake itself in a Conda environment at
 environment does not already exist at this path.
 
 ```bash
-bash run_pipeline.sh config/config.yaml # specify path to config file
+bash run_pipeline.sh # uses config file at config/config.yaml by default
 ```
 
 Performance-related options include:
 
-* `--threads` - Change total number of threads available for the pipeline
+* `--cores` - Change total number of CPU cores available for the pipeline
 * `--dryrun` - Show rules that will be run only, do not actually execute
 * `--notemp` - Keep temporary files (trimmed, merged, dereplicated reads);
                remove this flag to discard them after run.

@@ -16,7 +16,7 @@ STARTTIME=$(date +%s)
 CORES=12
 conda activate ./snakemake_8
 echo "Activated conda environment."
-echo "Starting the pipeline using $THREADS threads."
-snakemake --sdm conda --cores $CORES --conda-frontend mamba --notemp --configfile config/config.yaml
+echo "Starting the pipeline using $CORES CPU cores."
+snakemake --sdm conda --cores $CORES --conda-frontend mamba --notemp --configfile config/config.yaml $@
 ENDTIME=$(date +%s)
 echo "It took $(($ENDTIME - $STARTTIME)) seconds to finish this run."

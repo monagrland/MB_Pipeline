@@ -2,284 +2,164 @@
 
 This is a Metabarcoding Pipeline developed for Illumina Sequencing Data at the
 Thuenen Institute of Biodiversity, Braunschweig by Wiebke Sickel & Lasse
-Krueger.
+Krueger, with contributions from Brandon Seah.
 
 
 ## Prerequisites
 
 The Pipeline is managed by [Snakemake](https://snakemake.readthedocs.io/) and
 uses various tools, which are specified in Conda environment files in the
-`envs/` directory. All that is needed to start the pipeline is a current version
+`workflow/envs` directory. All that is needed to start the pipeline is a current version
 of [Conda](https://docs.conda.io/). When the pipeline is run for the first
 time, the required software is automatically installed in Conda environments.
 [Mamba](https://mamba.readthedocs.io/) can be used as an alternative to Conda.
 
-Additionally required are:
-- files containing paired end reads of Illumina sequencing data for the used
-  metabarcoding marker; file names should follow the pattern
-  `{prefix}_R(1|2)_{suffix}.(fastq|fq).gz` where each combination of `prefix`
-  and `suffix` represent a single sample.
-- config file in YAML format with all required information; modify the template
-  `example_config.yaml` as described below.
+Input data should be short-read metabarcoding sequence data (paired- or
+single-end) in Fastq or gzipped Fastq format. File paths and pipeline
+options/parameters are specified in config files (see below).
+
+A reference database in Fasta format is required for taxonomic classification.
+The Fasta headers should contain the taxonomy string in SINTAX format, as
+described in the [Vsearch
+manual](https://github.com/torognes/vsearch/releases/download/v2.26.1/vsearch_manual.pdf).
+
+
+## Setting up the pipeline
+
+Depending on your familiarity with Snakemake, there are several ways to use set
+up this pipeline to use with your own data.
+
+
+### Option 1. Download or clone from GitHub
+
+Clone the pipeline directly from GitHub:
+
+```bash
+git clone git@github.com:monagrland/MB_Pipeline.git
+```
+
+To clone a specific version, specify its tag with the `--branch` option.
+
+Alternatively, download a zipped archive of the source code from the [GitHub
+releases page](https://github.com/monagrland/MB_Pipeline/releases).
+
+
+### Option 2. Deploy with Snakedeploy
+
+[Snakedeploy](https://snakedeploy.readthedocs.io/en/latest/) is a tool to
+deploy Snakemake pipelines that have been published on platforms like GitHub or
+GitLab.
+
+The new workflow containing the customized config and input files can be saved
+and managed as a new git repository, independent of the MB_Pipeline repository.
+
+TODO
+
+
+### Option 3. Deploy as a module in another workflow
+
+This is similar to option 2 above, except that you wish to incorporate
+MB_Workflow in an existing Snakemake pipeline. Instead of using the Snakedeploy
+command line tool to set up a new template workflow, you should directly add a
+`module` declaration to the existing workflow. See the [Snakemake
+documentation](https://snakemake.readthedocs.io/en/stable/snakefiles/deployment.html#using-and-combining-pre-exising-workflows)
+
+
+## Configuration
+
+The pipeline options and input/output paths are declared in a configuration
+file `config/config.yaml` and table `config/reads.tsv` respectively. These
+should be modified to match the actual data and analysis you want to perform.
+
+The sample files provided are configured to run the test dataset in the `test/`
+subfolder without further modification, and can be used to test the pipeline.
+
+Configuration options are described in the `config/README.md` file.
 
 
 ## Execution and performance parameters
 
-The input/output paths and pipeline options are declared in a configuration
-file. The sample config file `example_config.yaml` is set up to run the test
-dataset in the `test/` subfolder.
+The pipeline is executed with `snakemake`, specifying the path to the config
+file with the `--configfile` parameter, and other options.
 
-Use the bash script `run_pipeline.sh` to execute the pipeline.
+Output will be written to the subfolder `results/`, and log files to `logs/`,
+which will be created if they do not already exist.
+
+Examine and/or modfiy the bash script `run_pipeline.sh` for typical defaults.
+The script first installs Snakemake itself in a Conda environment at
+`./snakemake_8`, which will be activated before running the pipeline, if this
+environment does not already exist at this path.
 
 ```bash
-bash run_pipeline.sh example_config.yaml
+bash run_pipeline.sh config/config.yaml # specify path to config file
 ```
 
-Snakemake itself will be installed to a Conda environment named `mb_snakemake`,
-which will be activated before running the pipeline, if this environment does
-not already exist.
+Performance-related options include:
 
-
-Performance-related options are specified in the `run_pipeline.sh` script; see
-the [Snakemake
-documentation](https://snakemake.readthedocs.io/en/stable/executing/cli.html)
-for the complete list:
-
-* `--threads 8` - Change total number of threads available for the pipeline
+* `--threads` - Change total number of threads available for the pipeline
 * `--dryrun` - Show rules that will be run only, do not actually execute
 * `--notemp` - Keep temporary files (trimmed, merged, dereplicated reads);
                remove this flag to discard them after run.
-* `--conda-frontend conda` - Specify `conda` or `mamba` to manage environments
-
-
-## Config File Structure
-
-The config file is a simple .yaml file containing all required information. An
-example config file is provided: `example_config.yaml`.
-
-
-#### Working directory path
-
-Specify the path to write all results and logs:
-
-```yaml
-workdir: test
-```
-
-Other paths in the config file are relative to the `workdir`; alternatively,
-absolute paths can be specified.
-
-
-Specify the directory containing the sequencing reads at `input` key.
-
-```yaml
-input: /home/user/metabarcoding_raw_data
-```
-
-
-### Paired- or single-end reads
-If paired end reads are used, specify this at the `paired` key. This key
-accepts only `true` or `false`.
-
-```yaml
-paired: true
-```
-
-
-### Adapter Trimming
-
-The tool used for adapter trimming in this pipeline is cutadapt. The config
-file is structured in such a way that all parameters for cutadapt can also be
-specified via the config file. The most important information to be specified
-here are the adapter sequences. Another useful parameter can be the minimum
-overlap (`-O`). If other parameters are required, please consult the <a
-href="https://cutadapt.readthedocs.io/en/stable/index.html" title =
-"cutadapt_link"> cutadapt documentation</a>.
-
-```yaml
-adapter_trimming_options:
-  - "-g ATGCGATACTTGGTGTGAAT"
-  - "-G GACGCTTCTCCAGACTACAAT"
-  - "-O 23"
-```
-
-
-### Merging paired reads
-
-To merge the forward and reverse reads, the `--fastq_mergepairs` argument of
-the VSEARCH tool is used. All possible parameters can be found on the
-corresponding documentation on the <a
-href="https://github.com/torognes/vsearch" title = "vsearch_link">GitHub
-page</a>.
-
-```yaml
-merge_options:
-  - "--fastq_allowmergestagger"
-  - "--fastq_minovlen 100"
-  - "--fastq_maxdiffs 15"
-  - "--fastq_eeout"
-```
-
-### Quality Filtering
-
-```yaml
-filter_options:
-  - "--fastq_maxee 1.0"
-  - "--fastq_minlen 200"
-  - "--fastq_maxlen 500"
-  - "--fastq_maxns 0"
-  - "--fasta_width 0"
-```
-
-
-### Dereplication
-
-Exactly identical sequences are removed with VSEARCH `--derep_fulllength`.
-
-
-### Protein coding sequences
-
-Protein-coding sequences (e.g. the mitochondrial cytochrome oxidase I marker
-sequence) can be processed differently from non-coding sequences (e.g. tRNA or
-rRNA markers). Instead of filtering for chimeras with UCHIME (see below),
-putative pseudogenes are removed that have excessive in-frame stop codons or
-where the translation does not match a HMM of the target protein.
-
-Activate the coding sequence-specific subworkflow with:
-
-```yaml
-protein_coding: true
-```
-
-Genetic code and a HMM file of the target protein should be supplied to screen
-translated sequences for pseudogenes; PCR chimeras should also be filtered out
-in this step. The approach is adapted from [Porter & Hajibabaei,
-2021](https://doi.org/10.1186/s12859-021-04180-x).
-
-```yaml
-coding:
-  frame: 3 # default for the Leray fragment of mtCOI
-  code: 5 # Genetic code, must not be a stopless code
-  hmm: null # path to the HMM file, relative to workdir
-```
-
-Entropy ratio-based distance denoising with DnoisE (see below) is only
-available for coding sequences; the reading frame must be specified. However it
-is possible to denoise with DnoisE but still use UCHIME to remove chimeras.
-
-
-### Denoising
-
-Denoising is performed with Unoise ([Edgar,
-2016](https://doi.org/10.1101/081257 )) implemented in
-[Vsearch](https://github.com/torognes/vsearch) by default, but DnoisE (see
-below) is an option for coding sequences.
-
-Specify either `unoise` or `dnoise` to the key `method` under `denoising`.
-
-```yaml
-denoising:
-  method: 'unoise'
-  alpha: 5
-  minsize: 8
-```
-
-Both methods use the parameters alpha and minsize.
-
-Parameter alpha controls the tradeoff between "sensitivity to small differences
-against an increase in the number of bad sequences which are wrongly predicted
-to be good." Higher values of alpha retain more sequences (more sensitive, more
-bad sequences), whereas lower values retain fewer (less sensitive, fewer bad
-sequences).
-
-Minsize is the minimum number of sequences represented by a cluster after
-denoising.
-
-
-#### Denoising with DnoisE
-
-This will perform entropy-based distance denoising with
-[DnoisE](https://github.com/adriantich/DnoisE/) ([Antich et al.,
-2022](https://doi.org/10.7717/peerj.12758)) instead of Vsearch Unoise.
-
-The expected reading frame of the amplified metabarcoding fragment should be
-known, based on the PCR primers used, and denote the codon position (1, 2, or
-3) of the first base in the fragment.
-
-DnoisE can calculate the entropy ratio of codon positions 2 and 3 to help set
-values of the denoising parameter alpha and the minimum cluster size. Specify
-the range of alpha and minsize values to test:
-
-```yaml
-alpha_range: [1,2,3,4,5,6,7,8,9,10]
-minsize_range: [2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]
-```
-
-The pipeline first runs with the default alpha and minsize values (see below),
-and also produces plots of entropy ratio vs. alpha and minsize for the
-specified ranges. After reviewing the plots, the user can update the values for
-alpha and minsize and rerun the pipeline if necessary.
-
-
-### Screening for non-target sequences and artefacts
-
-Non-target sequences (e.g. pseudogenes, non-target amplicons) and technical
-artefacts (e.g. PCR chimeras) should be removed from the sequences.
-
-Coding sequences are screened with an HMM of the target protein, and for
-excessive in-frame stop codons (see above). This procedure should also
-indirectly remove PCR chimeras.
-
-For non-coding sequences are screened for PCR chimeras with UCHIME de-novo
-implemented in VSEARCH.
-
-
-### Community Table Creation
-
-Reads are aligned to the final set of ASVs to calculate abundance per ASV per
-sample.
-
-```yaml
-community_table_options:
-  - "--id 0.97"
-  - "--strand plus"
-```
-
-
-### Taxonomic classification
-
-#### Reference databases for taxonomic classification
-
-These can be either in Fasta or UDB format. For large databases, preparing a
-UDB file is faster, as it avoids re-indexing every time the pipeline is run.
-
-```yaml
-direct_dbs:
-  - "/mnt/data/databases/bcd_ITS2/its2_viridiplantae_de.fa"
-  - "/mnt/data/databases/bcd_ITS2/its2_viridiplantae_eu.fa"
-hierarchical_db: "/mnt/data/databases/bcd_ITS2/its2_viridiplantae_all.fa"
-```
-
-#### Classification Thresholds
-
-```yaml
-classification_threshold: "0.97"
-hierarchical_threshold: "0.8"
-```
+* `--conda-frontend conda` - Specify `conda` or `mamba` (recommended) to manage
+                             environments
+
+See the [Snakemake
+documentation](https://snakemake.readthedocs.io/en/stable/executing/cli.html)
+for the complete list:
 
 
 ## Unlocking
+
 Snakemake by default locks the directories in which the results are saved. If a
 run fails, the directories remain locked and if you attempt to rerun the
 pipeline with the same output directory, you get an error message. To unlock
 the directory, simply run the following script:
 
 ```bash
-bash run_pipeline.sh example_config.yaml
+bash unlock.sh config/config.yaml
 ```
 
 
-## Workflow
+## Workflow description
+
+Raw sequencing reads are first trimmed of adapter sequences with
+[Cutadapt](https://cutadapt.readthedocs.io/en/stable/).  Paired-end reads are
+merged into the complete amplicon sequence with
+[VSEARCH](https://github.com/torognes/vsearch).  For each sample, reads are
+then filtered for quality, and exactly identical sequences are deduplicated,
+both steps with VSEARCH. Reads are then pooled across all samples and
+deduplicated again to obtain the pooled, dereplicated amplicon sequences.
+
+If the barcoding marker sequence is not from a protein-coding gene, they are
+first clustered with the UNOISE algorithm as implemented in VSEARCH. The
+resulting amplicon sequence variants (ASVs) are then screened for PCR chimeras
+with the [UCHIME3 denovo
+algorithm](https://www.drive5.com/usearch/manual/cmd_uchime3_denovo.html) as
+implemented in VSEARCH, to produce the set fo denoised, artefact-filtered ASVs.
+
+If the sequence is protein-coding, the sequences are instead denoised with the
+entropy ratio-based denoising method
+[DnoisE](https://github.com/adriantich/DnoisE). They are then translated in all
+forward reading frames with
+[pytransaln](https://github.com/monagrland/pytransaln) and screened against a
+HMM of the target protein sequence (using
+[pyhmmer](https://github.com/althonos/pyhmmer) and [HMMer](https://hmmer.org/)
+internally), to screen out pseudogenes and to find the correct reading frame.
+PCR chimeras should also be indirectly removed at this step.
+
+The per-sample abundance of sequences represented by each final ASV is
+calculated by re-aligning them with VSEARCH with the global alignment option.
+
+Denoised, screened ASVs are aligned with
+[MAFFT](https://mafft.cbrc.jp/alignment/software/), and used to build a
+phylogenetic tree, from which the phylogenetic diversity per sample is
+calculated.
+
+A consensus taxonomy per representative ASV is also reported based on the
+user-supplied reference database.
+
+For full parameter details please see the `config/README.md` file.
+
 
 ```mermaid
 flowchart TB

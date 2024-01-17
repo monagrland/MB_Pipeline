@@ -8,8 +8,9 @@ rule rename_headers_for_dnoise:
     output:
         "results/06_derep/unique_reads_rename.fasta",
     threads: 1
+    log: "logs/06_derep/rename_headers_for_dnoise.log"
     shell:
-        "sed 's/;sample/_sample/' {input} | sed 's/;ee/_ee/' > {output};"
+        "sed 's/;sample/_sample/' {input} | sed 's/;ee/_ee/' > {output} 2> {log};"
 
 
 rule denoising_dnoise:

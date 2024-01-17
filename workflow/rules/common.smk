@@ -9,11 +9,10 @@ rule quality_filter_mqc:
     output:
         "logs/vsearch_fastq_filter._mqc.json",
     params:
-        script_path=os.path.join(workflow.basedir, "scripts/vsearch_logs_multiqc.py"),
-    shell:
-        """
-        python {params.script_path} --format fastq_filter --files {input} > {output}
-        """
+        format="fastq_filter",
+    log: "logs/03_quality_filtering/quality_filter_mqc.log"
+    script:
+        "../scripts/vsearch_logs_multiqc.py"
 
 
 rule dereplicate:
@@ -40,11 +39,10 @@ rule dereplicate_mqc:
     output:
         "logs/vsearch_derep_fulllength._mqc.json",
     params:
-        script_path=os.path.join(workflow.basedir, "scripts/vsearch_logs_multiqc.py"),
-    shell:
-        """
-        python {params.script_path} --format derep_fulllength --files {input} > {output}
-        """
+        format="derep_fulllength",
+    log: "logs/04_derep/dereplicate_mqc.log"
+    script:
+        "../scripts/vsearch_logs_multiqc.py"
 
 
 rule concat_samples:
@@ -260,6 +258,7 @@ rule faiths_pd:
         "results/13_phylogeny/ASVs_{method}.{screening}.{treeprog}.faiths_pd.tsv",
     conda:
         "../envs/mb_phylogeny.yaml"
+    log: "logs/13_phylogeny/faiths_pd.{method}.{screening}.{treeprog}.log"
     script:
         "../scripts/faiths_pd.py"
 
@@ -296,8 +295,9 @@ rule krona:
         "../envs/mb_krona.yaml"
     message:
         "Creating Krona Plot"
+    log: "logs/10_taxonomy/krona.{method}.{screening}.log"
     shell:
-        "ktImportText -q {input} -o {output}"
+        "ktImportText -q {input} -o {output} &> {log}"
 
 
 rule merge_tables:

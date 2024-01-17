@@ -69,11 +69,10 @@ rule merge_mqc:
     output:
         "logs/vsearch_fastq_mergepairs._mqc.json",
     params:
-        script_path=os.path.join(workflow.basedir, "scripts/vsearch_logs_multiqc.py"),
-    shell:
-        """
-        python {params.script_path} --format fastq_mergepairs --files {input} > {output}
-        """
+        format="fastq_mergepairs",
+    log: "logs/02_merging/merge_mqc.log"
+    script:
+        "../scripts/vsearch_logs_multiqc.py"
 
 
 rule quality_filter:

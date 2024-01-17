@@ -2,7 +2,6 @@
 
 # Parse VSEARCH log messages for MultiQC
 
-# import argparse
 import re
 from os.path import basename, splitext
 import json
@@ -46,7 +45,7 @@ def process_record(rec, which):
         for key in ["pairs", "merged", "notmerged"]:
             rec[key] = int(rec[key])
         if rec["merged"] + rec["notmerged"] != rec["pairs"]:
-            print("Warning: numbers of reads do not match")
+            sys.stderr.write("Warning: numbers of reads do not match\n")
         out_keys = ["merged", "notmerged"]
     elif which == "fastq_filter":
         for key in ["kept", "kept_truncated", "discarded"]:
@@ -79,27 +78,37 @@ if __name__ == "__main__":
     )
     parser.add_argument("--files", nargs="+")
     args = parser.parse_args()
+    try:  # called from Snakemake pipeline
+        args = {
+            "format": snakemake.params["format"],
+            "files": snakemake.input,
+            "output": snakemake.output[0],
+        }
+        sys.stderr = open(snakemake.log[0], "w")
+    except NameError:  # called from command line
+        args = vars(args)
 
-    data = parsefiles(args.files, args.format)
-    if args.format == "fastq_mergepairs":
+    data = parsefiles(args["files"], args["format"])
+    if args["format"] == "fastq_mergepairs":
         out = {
             "id": "vsearch_fastq_mergepairs",
             "section_name": "Paired end read merging",
             "plot_type": "bargraph",
             "data": data,
         }
-    elif args.format == "fastq_filter":
+    elif args["format"] == "fastq_filter":
         out = {
             "id": "vsearch_fastq_filter",
             "section_name": "Quality filtering of merged/single reads",
             "plot_type": "bargraph",
             "data": data,
         }
-    elif args.format == "derep_fulllength":
+    elif args["format"] == "derep_fulllength":
         out = {
             "id": "vsearch_derep_fulllength",
             "section_name": "Dereplication of individual read files",
             "plot_type": "bargraph",
             "data": data,
         }
-    print(json.dumps(out, indent=4))
+    with open(args["output"], "w") as fh:
+        fh.write(json.dumps(out, indent=4))

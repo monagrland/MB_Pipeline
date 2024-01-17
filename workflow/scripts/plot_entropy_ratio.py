@@ -30,8 +30,9 @@ if __name__ == "__main__":
             "alphas": snakemake.params["alphas"],
             "output": snakemake.output[0],
         }
+        sys.stderr = open(snakemake.log[0], "w")
     except NameError:  # called from command line
-        args = vars(args())
+        args = vars(args)
 
     print(args["inputs"])
     print(args["alphas"])

@@ -5,6 +5,7 @@ import biom
 import pandas as pd
 from skbio.tree import TreeNode
 from skbio.diversity import alpha_diversity
+import sys
 
 
 def args():
@@ -28,8 +29,9 @@ if __name__ == "__main__":
             "biom": snakemake.input["biom"],
             "out": snakemake.output[0],
         }
+        sys.stderr = open(snakemake.log[0], "w")
     except NameError:
-        args = vars(args())
+        args = vars(args)
     with open(args["biom"]) as fh:
         tab = biom.parse_table(fh).to_dataframe().transpose()
     tree = TreeNode.read(args["tree"]).root_at_midpoint()

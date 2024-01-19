@@ -10,7 +10,8 @@ rule quality_filter_mqc:
         "logs/vsearch_fastq_filter._mqc.json",
     params:
         format="fastq_filter",
-    log: "logs/03_quality_filtering/quality_filter_mqc.log"
+    log:
+        "logs/03_quality_filtering/quality_filter_mqc.log",
     script:
         "../scripts/vsearch_logs_multiqc.py"
 
@@ -40,7 +41,8 @@ rule dereplicate_mqc:
         "logs/vsearch_derep_fulllength._mqc.json",
     params:
         format="derep_fulllength",
-    log: "logs/04_derep/dereplicate_mqc.log"
+    log:
+        "logs/04_derep/dereplicate_mqc.log",
     script:
         "../scripts/vsearch_logs_multiqc.py"
 
@@ -258,7 +260,8 @@ rule faiths_pd:
         "results/13_phylogeny/ASVs_{method}.{screening}.{treeprog}.faiths_pd.tsv",
     conda:
         "../envs/mb_phylogeny.yaml"
-    log: "logs/13_phylogeny/faiths_pd.{method}.{screening}.{treeprog}.log"
+    log:
+        "logs/13_phylogeny/faiths_pd.{method}.{screening}.{treeprog}.log",
     script:
         "../scripts/faiths_pd.py"
 
@@ -295,7 +298,8 @@ rule krona:
         "../envs/mb_krona.yaml"
     message:
         "Creating Krona Plot"
-    log: "logs/10_taxonomy/krona.{method}.{screening}.log"
+    log:
+        "logs/10_taxonomy/krona.{method}.{screening}.log",
     shell:
         "ktImportText -q {input} -o {output} &> {log}"
 
@@ -306,21 +310,11 @@ rule merge_tables:
         community_table="results/09_community_table/community_table.{method}.{screening}.txt",
         tax_table="results/10_taxonomy/taxonomy.{method}.{screening}.txt",
     output:
-        merged_table="results/11_merged/community_and_tax_merged.{method}.{screening}.txt",
-    message:
-        "Merging community and taxonomy Tables"
-    run:
-        community_table = pd.read_csv(input.community_table, sep="\t", index_col=0)
-        tax_table = pd.read_csv(input.tax_table, sep="\t", index_col=1).iloc[:, 1:]
-        ASV_with_size_lst = tax_table.index.tolist()
-        ASV_sans_size_lst = []
-        for ASV in ASV_with_size_lst:
-            ASV_sans_size_lst.append(ASV.split(";")[0])
-        tax_table.index = ASV_sans_size_lst
-        merged_table = pd.merge(
-            community_table, tax_table, left_index=True, right_index=True
-        )
-        merged_table.to_csv(output.merged_table, sep="\t")
+        "results/11_merged/community_and_tax_merged.{method}.{screening}.txt",
+    log:
+        "logs/11_merged/merge_tables.{method}.{screening}.log",
+    script:
+        "../scripts/merge_tables.py"
 
 
 def mqc_files(paired, coding):

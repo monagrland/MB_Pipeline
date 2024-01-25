@@ -3,7 +3,7 @@ channels:
   - bioconda
   - nodefaults
 dependencies:
-  - dnoise =1.4.0
+  - dnoise =1.4.1
   - pandas =2.0
   - matplotlib-base =3.6
   - biopython =1.81

@@ -8,7 +8,8 @@ rule rename_headers_for_dnoise:
     output:
         "results/06_derep/unique_reads_rename.fasta",
     threads: 1
-    log: "logs/06_derep/rename_headers_for_dnoise.log"
+    log:
+        "logs/06_derep/rename_headers_for_dnoise.log",
     shell:
         "sed 's/;sample/_sample/' {input} | sed 's/;ee/_ee/' > {output} 2> {log};"
 
@@ -81,11 +82,10 @@ rule plot_entropy_ratio_vs_alpha:
     params:
         alphas=",".join([str(i) for i in config["dnoise_opts"]["alpha_range"]]),
         inputs=lambda wildcards, input: ",".join(input),
-        script_path=os.path.join(workflow.basedir, "scripts/plot_entropy_ratio.py"),
     conda:
         "../envs/mb_dnoise.yaml"
     script:
-        "{params.script_path}"
+        "../scripts/plot_entropy_ratio.py"
 
 
 rule plot_entropy_ratio_vs_minsize:

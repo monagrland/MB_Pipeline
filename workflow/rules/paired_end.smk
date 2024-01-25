@@ -54,7 +54,7 @@ rule merge:
     threads: 1
     log:
         "logs/02_merging/{sample}.txt",
-    shell: # the escaping backslash before \; is required, but causes a syntax warning
+    shell:  # the escaping backslash before \; is required, but causes a syntax warning
         """
         vsearch --fastq_mergepairs {input.fw} --reverse {input.rv} \
         --fastqout {output} {params.options} --relabel {wildcards.sample}_ \
@@ -70,7 +70,8 @@ rule merge_mqc:
         "logs/vsearch_fastq_mergepairs._mqc.json",
     params:
         format="fastq_mergepairs",
-    log: "logs/02_merging/merge_mqc.log"
+    log:
+        "logs/02_merging/merge_mqc.log",
     script:
         "../scripts/vsearch_logs_multiqc.py"
 

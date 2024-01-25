@@ -22,7 +22,7 @@ LOGFILE_REGEX = {
     },
     "derep_fulllength": {
         "vsearch_version": r"^vsearch ([^,]+),",
-        "sequences": r"\d+ nt in (\d+) seqs,",
+        "sequences": r"\d+ nt in (\d+) seqs",
         "unique": r"(\d+) unique sequences",
     },
 }
@@ -77,6 +77,7 @@ if __name__ == "__main__":
         "--format", type=str, help="VSEARCH subcommand that produced the file"
     )
     parser.add_argument("--files", nargs="+")
+    parser.add_argument("--output", type=str, help="Path to output file")
     args = parser.parse_args()
     try:  # called from Snakemake pipeline
         args = {

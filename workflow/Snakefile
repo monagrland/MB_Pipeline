@@ -41,6 +41,7 @@ rule all:
         expand(
             [
                 "results/10_taxonomy/krona_plot.{method}.{screening}.html",
+                "results/10_taxonomy/sintax.{method}.{screening}.tsv",
                 "results/11_merged/community_and_tax_merged.{method}.{screening}.txt",
                 "results/12_report/multiqc_report.{method}.{screening}.html",
                 "results/13_phylogeny/ASVs_{method}.{screening}.{treeprog}.faiths_pd.tsv",

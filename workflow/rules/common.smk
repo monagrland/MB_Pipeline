@@ -288,6 +288,24 @@ rule taxonomy:
         "../scripts/multilvl_taxonomic_classification.py"
 
 
+rule sintax:
+    """Assign taxonomy to ASVs with SINTAX implemented in Vsearch"""
+    input:
+        ASVs="results/08_ASVs_screened/ASVs_{method}.{screening}.fasta",
+        db=config["sintax_db"],
+    output:
+        sintax="results/10_taxonomy/sintax.{method}.{screening}.tsv"
+    threads: workflow.cores
+    conda:
+        "../envs/mb_taxonomy.yaml"
+    log:
+        "logs/10_taxonomy/sintax.{method}.{screening}.log"
+    shell:
+        """
+        vsearch --threads {threads} --db {input.db} --sintax {input.ASVs} --tabbedout {output} &> {log}
+        """
+
+
 rule krona:
     """Render Krona plot of the taxonomic summary"""
     input:

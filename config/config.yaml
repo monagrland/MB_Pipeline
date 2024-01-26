@@ -75,6 +75,9 @@ direct_dbs: # Path is relative to workdir
 hierarchical_db:
   "testdata/db/bold_coi-5p_test.fasta"
 
+sintax_db: # single DB for SINTAX classification: can be one of the above or different DB
+  "testdata/db/bold_coi-5p_test.fasta"
+
 classification_threshold: 0.90
 
 hierarchical_threshold: 0.8

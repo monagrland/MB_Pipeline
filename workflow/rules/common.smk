@@ -1,6 +1,8 @@
 wildcard_constraints:
     method=r"dnoise|unoise",
     screening=r"no_chimeras|no_pseudogenes",
+    refdb=r"[^.]+",
+    class_method=r"[^.]+",
 
 
 rule quality_filter_mqc:
@@ -270,12 +272,16 @@ rule taxonomy:
     """Assign taxonomy to ASVs with two-step taxonomic classification method"""
     input:
         ASVs="results/08_ASVs_screened/ASVs_{method}.{screening}.fasta",
-        direct_dbs=lambda wildcards: config["direct_dbs"][wildcards.refdb],
-        hierarchical_db=lambda wildcards: config["hierarchical_db"][wildcards.refdb],
+        direct_dbs=lambda wildcards: config["dbpaths"]["multilvl"]["direct_dbs"][
+            wildcards.refdb
+        ],
+        hierarchical_db=lambda wildcards: config["dbpaths"]["multilvl"][
+            "hierarchical_db"
+        ][wildcards.refdb],
     output:
-        base="results/10_taxonomy/taxonomy.{method}.{screening}.{refdb}.txt",
-        krona="results/10_taxonomy/taxonomy.{method}.{screening}.{refdb}.krona.txt",
-        stats_mqc="results/10_taxonomy/stats_mqc.{method}.{screening}.{refdb}.csv",
+        base="results/10_taxonomy/taxonomy.{method}.{screening}.multilvl.{refdb}.txt",
+        krona="results/10_taxonomy/taxonomy.{method}.{screening}.multilvl.{refdb}.krona.txt",
+        stats_mqc="results/10_taxonomy/stats_mqc.{method}.{screening}.multilvl.{refdb}.csv",
     params:
         keep_results=True,
         hierarchical_threshold=config["hierarchical_threshold"],
@@ -285,7 +291,7 @@ rule taxonomy:
     conda:
         "../envs/mb_taxonomy.yaml"
     log:  # TODO how to redirect script print output?
-        "logs/10_taxonomy/taxonomy.{method}.{screening}.{refdb}.log",
+        "logs/10_taxonomy/taxonomy.{method}.{screening}.multilvl.{refdb}.log",
     script:
         "../scripts/multilvl_taxonomic_classification.py"
 
@@ -294,32 +300,49 @@ rule sintax:
     """Assign taxonomy to ASVs with SINTAX implemented in Vsearch"""
     input:
         ASVs="results/08_ASVs_screened/ASVs_{method}.{screening}.fasta",
-        db=lambda wildcards: config["sintax_db"][wildcards.refdb],
+        db=lambda wildcards: config["dbpaths"]["sintax"][wildcards.refdb],
     output:
-        sintax="results/10_taxonomy/sintax.{method}.{screening}.{refdb}.tsv",
+        sintax="results/10_taxonomy/taxonomy.{method}.{screening}.sintax.{refdb}.tsv",
     threads: workflow.cores
     conda:
         "../envs/mb_taxonomy.yaml"
     log:
-        "logs/10_taxonomy/sintax.{method}.{screening}.{refdb}.log",
+        "logs/10_taxonomy/taxonomy.{method}.{screening}.sintax.{refdb}.log",
     shell:
         """
         vsearch --threads {threads} --db {input.db} --sintax {input.ASVs} --tabbedout {output} &> {log}
         """
 
 
-rule krona:
+rule sintax_to_krona:
+    """Convert SINTAX output to Krona input table"""
+    input:
+        "results/10_taxonomy/taxonomy.{method}.{screening}.sintax.{refdb}.tsv",
+    output:
+        krona="results/10_taxonomy/taxonomy.{method}.{screening}.sintax.{refdb}.krona.txt",
+        tax_table="results/10_taxonomy/taxonomy.{method}.{screening}.sintax.{refdb}.txt",
+    conda:
+        "../envs/mb_krona.yaml"
+    log:
+        "logs/10_taxonomy/sintax_to_krona.{method}.{screening}.sintax.{refdb}.log",
+    params:
+        cutoff=config["hierarchical_threshold"],
+    script:
+        "../scripts/sintax_output_krona.py"
+
+
+rule krona_render:
     """Render Krona plot of the taxonomic summary"""
     input:
-        "results/10_taxonomy/taxonomy.{method}.{screening}.{refdb}.krona.txt",
+        "results/10_taxonomy/taxonomy.{method}.{screening}.{class_method}.{refdb}.krona.txt",
     output:
-        "results/10_taxonomy/krona_plot.{method}.{screening}.{refdb}.html",
+        "results/10_taxonomy/krona_plot.{method}.{screening}.{class_method}.{refdb}.html",
     conda:
         "../envs/mb_krona.yaml"
     message:
         "Creating Krona Plot"
     log:
-        "logs/10_taxonomy/krona.{method}.{screening}.{refdb}.log",
+        "logs/10_taxonomy/krona.{method}.{screening}.{class_method}.{refdb}.log",
     shell:
         "ktImportText -q {input} -o {output} &> {log}"
 
@@ -328,18 +351,17 @@ rule merge_tables:
     """Combine ASV counts per sample with taxonomy"""
     input:
         community_table="results/09_community_table/community_table.{method}.{screening}.txt",
-        tax_table="results/10_taxonomy/taxonomy.{method}.{screening}.{refdb}.txt",
+        tax_table="results/10_taxonomy/taxonomy.{method}.{screening}.{class_method}.{refdb}.txt",
     output:
-        "results/11_merged/community_and_tax_merged.{method}.{screening}.{refdb}.txt",
+        "results/11_merged/community_and_tax_merged.{method}.{screening}.{class_method}.{refdb}.txt",
     log:
-        "logs/11_merged/merge_tables.{method}.{screening}.{refdb}.log",
+        "logs/11_merged/merge_tables.{method}.{screening}.{class_method}.{refdb}.log",
     script:
         "../scripts/merge_tables.py"
 
 
 def mqc_files(paired, coding):
     out = [
-        "results/10_taxonomy/stats_mqc.{method}.{screening}.{refdb}.csv",
         "logs/vsearch_fastq_filter._mqc.json",
         "logs/vsearch_derep_fulllength._mqc.json",
     ]
@@ -352,6 +374,10 @@ def mqc_files(paired, coding):
                 "results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_spf_mqc.json",
                 "results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_mins_mqc.json",
             ]
+        )
+    if "multilvl" in config["class_method"]:
+        out.append(
+            "results/10_taxonomy/stats_mqc.{method}.{screening}.multilvl.{refdb}.csv"
         )
     return out
 

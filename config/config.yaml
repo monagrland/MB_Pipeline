@@ -69,14 +69,21 @@ community_table_options:
 #
 treeprog: "fasttree" # Options: fasttree, iqtree
 
-direct_dbs: # Path is relative to workdir
-  - "testdata/db/bold_coi-5p_test.fasta"
+# Paths to ref databases in Fasta or UDB format with SINTAX headers organized
+# into sets, so that output from different databases can be compared.
+# Paths are relative to workdir
 
+# two databases for the legacy "hierarchical classification" script
+direct_dbs: 
+  test:
+    - "testdata/db/bold_coi-5p_test.fasta"
 hierarchical_db:
-  "testdata/db/bold_coi-5p_test.fasta"
-
-sintax_db: # single DB for SINTAX classification: can be one of the above or different DB
-  "testdata/db/bold_coi-5p_test.fasta"
+  test:
+    "testdata/db/bold_coi-5p_test.fasta"
+# single DB for SINTAX classification: can be one of the above or different DB
+sintax_db: 
+  test:
+    "testdata/db/bold_coi-5p_test.fasta"
 
 classification_threshold: 0.90
 

@@ -102,11 +102,14 @@ properties:
       - "fasttree"
       - "iqtree"
   direct_dbs:
-    type: array
-    description: "Paths to databases for direct taxonomic classification; either Fasta or UDB format"
+    type: object
+    description: "Paths to databases for direct taxonomic classification; either Fasta or UDB format, keyed by database set"
   hierarchical_db:
-    type: string
-    description: "Path to database for SINTAX classification of sequences that could not be directly classified; either Fasta or UDB format"
+    type: object
+    description: "Path to database for SINTAX classification of sequences that could not be directly classified; either Fasta or UDB format, keyed by database set"
+  sintax_db:
+    type: object
+    description: "Path to database for default SINTAX classification with Vsearch, keyed by database set"
   classification_threshold:
     type: number
     default: 0.97

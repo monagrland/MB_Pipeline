@@ -484,8 +484,8 @@ def main(args):
 if __name__ == "__main__":
     try:  # Called from within Snakemake pipeline
         args = {
-            "db_list": snakemake.config["direct_dbs"],
-            "hierarchical_db": snakemake.config["hierarchical_db"],
+            "db_list": snakemake.input["direct_dbs"],
+            "hierarchical_db": snakemake.input["hierarchical_db"],
             "threshold": snakemake.config["classification_threshold"],
             "keep_results": snakemake.params["keep_results"],
             "sintax_cutoff": snakemake.params["hierarchical_threshold"],

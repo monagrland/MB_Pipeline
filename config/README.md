@@ -221,7 +221,7 @@ treeprog: "fasttree" # Options: fasttree, iqtree
 
 #### Reference databases for taxonomic classification
 
-The database should contain unaligned reference sequences for the target gene
+The database(s) should contain unaligned reference sequences for the target gene
 in Fasta format, along with the taxonomic classification in SINTAX format in
 the sequence header, which is described in the VSEARCH manual:
 
@@ -241,12 +241,27 @@ The database can also be already pre-formatted into UDB format with the
 file is faster, as it avoids re-indexing every time the pipeline is run.
 
 ```yaml
-
 direct_dbs: # Path is relative to workdir
-  - "testdata/db/bold_coi-5p_test.fasta"
-
+  test: # alias for this database
+    - "testdata/db/bold_coi-5p_test.fasta"
 hierarchical_db:
-  "testdata/db/bold_coi-5p_test.fasta"
+  test:
+    "testdata/db/bold_coi-5p_test.fasta"
+```
+
+Alternative reference databases can be specified with additional keys, e.g.
+
+```yaml
+direct_dbs: # Path is relative to workdir
+  test: # alias for this database
+    - "testdata/db/bold_coi-5p_test.fasta"
+  test2: # alias to another database
+    - "path/to/another/db.udb"
+hierarchical_db:
+  test:
+    "testdata/db/bold_coi-5p_test.fasta"
+  test2: # alias to another database
+    - "path/to/another/db.udb"
 ```
 
 

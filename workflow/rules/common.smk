@@ -270,10 +270,12 @@ rule taxonomy:
     """Assign taxonomy to ASVs with two-step taxonomic classification method"""
     input:
         ASVs="results/08_ASVs_screened/ASVs_{method}.{screening}.fasta",
+        direct_dbs=lambda wildcards: config["direct_dbs"][wildcards.refdb],
+        hierarchical_db=lambda wildcards: config["hierarchical_db"][wildcards.refdb],
     output:
-        base="results/10_taxonomy/taxonomy.{method}.{screening}.txt",
-        krona="results/10_taxonomy/taxonomy.{method}.{screening}.krona.txt",
-        stats_mqc="results/10_taxonomy/stats_mqc.{method}.{screening}.csv",
+        base="results/10_taxonomy/taxonomy.{method}.{screening}.{refdb}.txt",
+        krona="results/10_taxonomy/taxonomy.{method}.{screening}.{refdb}.krona.txt",
+        stats_mqc="results/10_taxonomy/stats_mqc.{method}.{screening}.{refdb}.csv",
     params:
         keep_results=True,
         hierarchical_threshold=config["hierarchical_threshold"],
@@ -283,7 +285,7 @@ rule taxonomy:
     conda:
         "../envs/mb_taxonomy.yaml"
     log:  # TODO how to redirect script print output?
-        "logs/10_taxonomy/taxonomy.{method}.{screening}.log",
+        "logs/10_taxonomy/taxonomy.{method}.{screening}.{refdb}.log",
     script:
         "../scripts/multilvl_taxonomic_classification.py"
 
@@ -292,14 +294,14 @@ rule sintax:
     """Assign taxonomy to ASVs with SINTAX implemented in Vsearch"""
     input:
         ASVs="results/08_ASVs_screened/ASVs_{method}.{screening}.fasta",
-        db=config["sintax_db"],
+        db=lambda wildcards: config["sintax_db"][wildcards.refdb],
     output:
-        sintax="results/10_taxonomy/sintax.{method}.{screening}.tsv"
+        sintax="results/10_taxonomy/sintax.{method}.{screening}.{refdb}.tsv",
     threads: workflow.cores
     conda:
         "../envs/mb_taxonomy.yaml"
     log:
-        "logs/10_taxonomy/sintax.{method}.{screening}.log"
+        "logs/10_taxonomy/sintax.{method}.{screening}.{refdb}.log",
     shell:
         """
         vsearch --threads {threads} --db {input.db} --sintax {input.ASVs} --tabbedout {output} &> {log}
@@ -309,15 +311,15 @@ rule sintax:
 rule krona:
     """Render Krona plot of the taxonomic summary"""
     input:
-        "results/10_taxonomy/taxonomy.{method}.{screening}.krona.txt",
+        "results/10_taxonomy/taxonomy.{method}.{screening}.{refdb}.krona.txt",
     output:
-        "results/10_taxonomy/krona_plot.{method}.{screening}.html",
+        "results/10_taxonomy/krona_plot.{method}.{screening}.{refdb}.html",
     conda:
         "../envs/mb_krona.yaml"
     message:
         "Creating Krona Plot"
     log:
-        "logs/10_taxonomy/krona.{method}.{screening}.log",
+        "logs/10_taxonomy/krona.{method}.{screening}.{refdb}.log",
     shell:
         "ktImportText -q {input} -o {output} &> {log}"
 
@@ -326,18 +328,18 @@ rule merge_tables:
     """Combine ASV counts per sample with taxonomy"""
     input:
         community_table="results/09_community_table/community_table.{method}.{screening}.txt",
-        tax_table="results/10_taxonomy/taxonomy.{method}.{screening}.txt",
+        tax_table="results/10_taxonomy/taxonomy.{method}.{screening}.{refdb}.txt",
     output:
-        "results/11_merged/community_and_tax_merged.{method}.{screening}.txt",
+        "results/11_merged/community_and_tax_merged.{method}.{screening}.{refdb}.txt",
     log:
-        "logs/11_merged/merge_tables.{method}.{screening}.log",
+        "logs/11_merged/merge_tables.{method}.{screening}.{refdb}.log",
     script:
         "../scripts/merge_tables.py"
 
 
 def mqc_files(paired, coding):
     out = [
-        "results/10_taxonomy/stats_mqc.{method}.{screening}.csv",
+        "results/10_taxonomy/stats_mqc.{method}.{screening}.{refdb}.csv",
         "logs/vsearch_fastq_filter._mqc.json",
         "logs/vsearch_derep_fulllength._mqc.json",
     ]
@@ -360,7 +362,7 @@ rule generate_report:
         custom_mqc_config="config/multiqc_config.yaml",  # TODO
         mqc_files=mqc_files(config["paired"], config["protein_coding"]),
     output:
-        "results/12_report/multiqc_report.{method}.{screening}.html",
+        "results/12_report/multiqc_report.{method}.{screening}.{refdb}.html",
     conda:
         "../envs/mb_multiqc.yaml"
     params:
@@ -370,7 +372,7 @@ rule generate_report:
     message:
         "Generating MultiQC report"
     log:
-        "logs/12_report/generate_report.{method}.{screening}.log",
+        "logs/12_report/generate_report.{method}.{screening}.{refdb}.log",
     shell:
         """
         multiqc {input.mqc_files} \

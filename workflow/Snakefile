@@ -40,13 +40,14 @@ rule all:
     input:
         expand(
             [
-                "results/10_taxonomy/krona_plot.{method}.{screening}.html",
-                "results/10_taxonomy/sintax.{method}.{screening}.tsv",
-                "results/11_merged/community_and_tax_merged.{method}.{screening}.txt",
-                "results/12_report/multiqc_report.{method}.{screening}.html",
+                "results/10_taxonomy/krona_plot.{method}.{screening}.{refdb}.html",
+                "results/10_taxonomy/sintax.{method}.{screening}.{refdb}.tsv",
+                "results/11_merged/community_and_tax_merged.{method}.{screening}.{refdb}.txt",
+                "results/12_report/multiqc_report.{method}.{screening}.{refdb}.html",
                 "results/13_phylogeny/ASVs_{method}.{screening}.{treeprog}.faiths_pd.tsv",
             ],
             method=config["denoising"]["method"],
             screening=screening,
             treeprog=config["treeprog"],
+            refdb=["test"],
         ),

@@ -49,8 +49,8 @@ coding:
 #
 denoising:
   alpha : 5        # Clustering parameter alpha used for Unoise or DnoisE
-  minsize : 8      # Minimum sequence cluster size to retain
-  method: 'dnoise' # either "unoise" or "dnoise"
+  minsize : 8                   # Minimum sequence cluster size to retain
+  method: ["dnoise"]  # either "unoise" or "dnoise" or both
 
 # Options for DnoisE
 dnoise_opts:

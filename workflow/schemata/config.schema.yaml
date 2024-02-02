@@ -71,11 +71,13 @@ properties:
         default: 8
         description: "Minimum number of sequences in a cluster to be retained"
       method:
-        type: string
-        default: "dnoise"
-        enum:
-          - "unoise"
-          - "dnoise"
+        type: array
+        default: ["dnoise"]
+        items:
+          type: string
+          enum:
+            - "unoise"
+            - "dnoise"
         description: "Which tool to use for denoising"
       required:
         - alpha
@@ -104,6 +106,11 @@ properties:
   class_method:
     type: array
     default: ["sintax", "multilvl"]
+    items:
+      type: string
+      enum:
+        - "sintax"
+        - "multilvl"
     description: "Taxonomic classification method to use, must be one of the keys under dbpaths"
   refdb:
     type: array

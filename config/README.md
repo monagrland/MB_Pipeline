@@ -11,9 +11,11 @@ Sample names and paths to the input files for the pipeline should be listed in
 `reads.tsv` in tab-separated format, with the following fields:
 
  * `sample` - Short identifier the sample (alphanumeric and underscore only)
- * `lib` - If there is more than one read file/library for a given sample, disambiguate them here.
+ * `lib` (optional) - If there is more than one read file/library for a given sample, disambiguate them here, e.g. as libraries `1`, `2`, ...
  * `fwd` - Path to forward read file, relative to Snakemake working directory. Absolute paths are not recommended.
  * `rev` - Path to reverse read file if reads are paired-end; leave blank if reads are single-end
+
+Other columns in the TSV file will be ignored.
 
 
 ## Config file structure
@@ -77,6 +79,7 @@ merge_options:
   - "--fastq_eeout"
 ```
 
+
 ### Quality Filtering
 
 Quality filtering parameters will also be passed verbatim to VSEARCH.
@@ -123,8 +126,7 @@ coding:
 ```
 
 Entropy ratio-based distance denoising with DnoisE (see below) is only
-available for coding sequences; the reading frame must be specified. However it
-is possible to denoise with DnoisE but still use UCHIME to remove chimeras.
+available for coding sequences; the reading frame must be specified.
 
 
 ### Denoising
@@ -165,19 +167,24 @@ The expected reading frame of the amplified metabarcoding fragment should be
 known, based on the PCR primers used, and denote the codon position (1, 2, or
 3) of the first base in the fragment.
 
-DnoisE can calculate the entropy ratio of codon positions 2 and 3 to help set
-values of the denoising parameter alpha and the minimum cluster size. Specify
-the range of alpha and minsize values to test:
+DnoisE can calculate the entropy ratio of codon positions 2 and 3 for different
+values of the denoising paramter alpha and minimum cluster size, to help in
+choosing a suitable value for alpha and min cluster size. Specify the range of
+alpha and minsize values to be tested:
 
 ```yaml
-alpha_range: [1,2,3,4,5,6,7,8,9,10]
-minsize_range: [2,3,4,5,6,7,8,9,10,20,30,40,50,60,70,80,90,100]
+dnoise_opts:
+  alpha_range :    # Range of alpha to test for entropy ratio diagnostics
+    [1,5,10]
+  minsize_range:   # Range of minsize to test for entropy ratio diagnostics
+    [2,10]
 ```
 
-The pipeline first runs with the default alpha and minsize values (see below),
+The pipeline first runs with the default alpha and minsize values (see above),
 and also produces plots of entropy ratio vs. alpha and minsize for the
-specified ranges. After reviewing the plots, the user can update the values for
-alpha and minsize and rerun the pipeline if necessary.
+specified ranges. After reviewing the plots, the user can update the desired
+values for alpha and minsize under the key `denoising` and rerun the pipeline
+if necessary.
 
 
 ### Screening for non-target sequences and artefacts
@@ -186,10 +193,10 @@ Non-target sequences (e.g. pseudogenes, non-target amplicons) and technical
 artefacts (e.g. PCR chimeras) should be removed from the sequences.
 
 Coding sequences are screened with an HMM of the target protein, and for
-excessive in-frame stop codons (see above). This procedure should also
-indirectly remove PCR chimeras.
+excessive in-frame stop codons, to remove pseudogenes (see above). This
+procedure should also indirectly remove PCR chimeras.
 
-For non-coding sequences are screened for PCR chimeras with UCHIME de-novo
+Non-coding sequences are screened for PCR chimeras with UCHIME de-novo
 implemented in VSEARCH.
 
 
@@ -221,9 +228,21 @@ treeprog: "fasttree" # Options: fasttree, iqtree
 
 #### Reference databases for taxonomic classification
 
-The database(s) should contain unaligned reference sequences for the target gene
-in Fasta format, along with the taxonomic classification in SINTAX format in
-the sequence header, which is described in the VSEARCH manual:
+There are two methods for taxonomic classification implemented so far: the
+SINTAX algorithm as implemented in SINTAX (`sintax`), and an experimental
+heuristic method using a two-step comparison against databases of narrower and
+broader scope (`multilvl`).
+
+More than one can be used: specify the option as a list to `class_method`:
+
+```yaml
+class_method: ["sintax", "multilvl"]
+```
+
+For `sintax` and `multilvl` methods, the database(s) should contain unaligned
+reference sequences for the target gene in Fasta format, along with the
+taxonomic classification in SINTAX format in the sequence header, which is
+described in the VSEARCH manual:
 
 > The reference database must contain taxonomic information in the header of
 > each sequence in the form of a string starting with ";tax=" and followed by a
@@ -236,41 +255,66 @@ the sequence header, which is described in the VSEARCH manual:
 > Example:
 > ">X80725_S000004313;tax=d:Bacteria,p:Proteobacteria,c:Gammaproteobacteria,o:Enterobacteriales,f:Enterobacteriaceae,g:Escherichia/Shigella,s:Escherichia_coli".
 
-The database can also be already pre-formatted into UDB format with the
+The database file can also be pre-formatted into UDB format with the
 `--makeudb_usearch` option in VSEARCH.  For large databases, preparing a UDB
 file is faster, as it avoids re-indexing every time the pipeline is run.
 
+The paths to the reference databases are specified under the key `dbpath`,
+keyed by the classification methods named above (`sintax` or `multilvl`), and
+further keyed by an alias for each database; the alias should not contain
+spaces or the `.` character. In the example below, the reference database for
+the `sintax` classifier has alias "test":
+
 ```yaml
-direct_dbs: # Path is relative to workdir
-  test: # alias for this database
-    - "testdata/db/bold_coi-5p_test.fasta"
-hierarchical_db:
-  test:
-    "testdata/db/bold_coi-5p_test.fasta"
+dbpaths: # Ref database used by all methods
+  sintax:
+    test:
+      "testdata/db/bold_coi-5p_test.fasta"
 ```
 
-Alternative reference databases can be specified with additional keys, e.g.
+The output files will contain the classification method and reference database
+alias in their filenames.
+
+The alias is necessary so that multiple reference databases can be applied in
+parallel, e.g. to compare the results when using two different databases
+curated in different ways. In the example below, the ASVs will be classified
+with SINTAX against two different databases, named "test" and "test2":
 
 ```yaml
-direct_dbs: # Path is relative to workdir
-  test: # alias for this database
-    - "testdata/db/bold_coi-5p_test.fasta"
-  test2: # alias to another database
-    - "path/to/another/db.udb"
-hierarchical_db:
-  test:
-    "testdata/db/bold_coi-5p_test.fasta"
-  test2: # alias to another database
-    - "path/to/another/db.udb"
+dbpaths:
+  sintax:
+    test: # Alias for first database
+      "testdata/db/bold_coi-5p_test.fasta"
+    test2: # Alias for second database
+      "path/to/db2.fasta""
+```
+
+If the `multilvl` classifier is used, two sets of databases are applied, one
+(or more) of narrower taxonomic scope for the first step, and one of broader
+taxonomic scope for the second step. These are specified under the database
+alias with the `narrow` and `broad` keys respectively.
+
+```yaml
+dbpaths:
+  multilvl:
+    test: # alias for the db set
+      narrow:
+        - "testdata/db/bold_coi-5p_test.fasta"
+      broad:
+        "testdata/db/bold_coi-5p_test.fasta"
 ```
 
 
 #### Classification Thresholds
 
+The cutoff scores for accepting results from the various classifiers are given
+under `class_thresholds`, keyed by the classification method. `multilvl`
+requires two thresholds for the `narrow` and `broad` steps.
+
 ```yaml
-classification_threshold: 0.90
-
-hierarchical_threshold: 0.8
+class_thresholds:
+  sintax: 0.8
+  multilvl:
+    narrow: 0.90 # threshold to use with narrow DB
+    broad: 0.8 # threshold for broad DB
 ```
-
-

@@ -158,7 +158,8 @@ phylogenetic tree, from which the phylogenetic diversity per sample is
 calculated.
 
 A consensus taxonomy per representative ASV is also reported based on the
-user-supplied reference database.
+user-supplied reference database, using either the SINTAX algorithm as
+implemented in VSEARCH, or an experimental two-step heuristic method.
 
 For full parameter details please see the `config/README.md` file.
 

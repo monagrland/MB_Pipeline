@@ -112,39 +112,12 @@ properties:
         - "sintax"
         - "multilvl"
     description: "Taxonomic classification method to use, must be one of the keys under dbpaths"
-  refdb:
-    type: array
-    default: ["test"]
-    description: "Which reference database to use, must be one of the keys under the respective dbpaths"
   dbpaths:
     type: object
-    description: "Paths to databases for taxonomic classification, keyed by classification method"
-    properties:
-      sintax:
-        type: object
-        description: "Database(s) for default SINTAX classification with Vsearch, keyed by database set"
-      multilvl:
-        type: object
-        description: "Databases for multilvl classification script"
-        properties:
-          direct_dbs:
-            type: object
-            description: "Databases for direct taxonomic classification; either Fasta or UDB format, keyed by database set"
-          hierarchical_db:
-            type: object
-            description: "Database for second step classification of sequences that could not be directly classified; either Fasta or UDB format, keyed by database set"
-  classification_threshold:
-    type: number
-    default: 0.97
-    maximum: 1
-    minimum: 0
-    description: "Minimum sequence identity for direct taxonomic classification"
-  hierarchical_threshold:
-    type: number
-    default: 0.8
-    maximum: 1
-    minimum: 0
-    description: "Minimum SINTAX support value to retain a taxonomic classification at a given rank"
+    description: "Paths to databases in Fasta or UDB format for taxonomic classification, keyed by classification method."
+  class_thresholds:
+    type: object
+    description: "Cutoff score for taxonomic classification, keyed by classification method."
 
 required:
   - reads_table
@@ -156,8 +129,6 @@ required:
   - community_table_options
   - treeprog
   - class_method
-  - refdb
   - dbpaths
-  - classification_threshold
-  - hierarchical_threshold
+  - class_thresholds
 

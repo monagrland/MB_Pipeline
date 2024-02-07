@@ -486,9 +486,9 @@ if __name__ == "__main__":
         args = {
             "db_list": snakemake.input["direct_dbs"],
             "hierarchical_db": snakemake.input["hierarchical_db"],
-            "threshold": snakemake.config["classification_threshold"],
+            "threshold": snakemake.params["threshold_narrow"],
             "keep_results": snakemake.params["keep_results"],
-            "sintax_cutoff": snakemake.params["hierarchical_threshold"],
+            "sintax_cutoff": snakemake.params["threshold_broad"],
             "ASVs": snakemake.input["ASVs"],
             "output": snakemake.output["base"],
             "krona": snakemake.output["krona"],

@@ -272,19 +272,20 @@ rule taxonomy:
     """Assign taxonomy to ASVs with two-step taxonomic classification method"""
     input:
         ASVs="results/08_ASVs_screened/ASVs_{method}.{screening}.fasta",
-        direct_dbs=lambda wildcards: config["dbpaths"]["multilvl"]["direct_dbs"][
-            wildcards.refdb
+        direct_dbs=lambda wildcards: config["dbpaths"]["multilvl"][wildcards.refdb][
+            "narrow"
         ],
         hierarchical_db=lambda wildcards: config["dbpaths"]["multilvl"][
-            "hierarchical_db"
-        ][wildcards.refdb],
+            wildcards.refdb
+        ]["broad"],
     output:
         base="results/10_taxonomy/taxonomy.{method}.{screening}.multilvl.{refdb}.txt",
         krona="results/10_taxonomy/taxonomy.{method}.{screening}.multilvl.{refdb}.krona.txt",
         stats_mqc="results/10_taxonomy/stats_mqc.{method}.{screening}.multilvl.{refdb}.csv",
     params:
         keep_results=True,
-        hierarchical_threshold=config["hierarchical_threshold"],
+        threshold_narrow=config["class_thresholds"]["multilvl"]["narrow"],
+        threshold_broad=config["class_thresholds"]["multilvl"]["broad"],
     threads: workflow.cores
     message:
         "Starting Multilevel Taxonomic Classification"
@@ -326,7 +327,7 @@ rule sintax_to_krona:
     log:
         "logs/10_taxonomy/sintax_to_krona.{method}.{screening}.sintax.{refdb}.log",
     params:
-        cutoff=config["hierarchical_threshold"],
+        cutoff=config["class_thresholds"]["sintax"],
     script:
         "../scripts/sintax_output_krona.py"
 
@@ -360,7 +361,7 @@ rule merge_tables:
         "../scripts/merge_tables.py"
 
 
-def mqc_files(paired, coding):
+def mqc_files(paired, coding, class_method):
     out = [
         "logs/vsearch_fastq_filter._mqc.json",
         "logs/vsearch_derep_fulllength._mqc.json",
@@ -375,7 +376,7 @@ def mqc_files(paired, coding):
                 "results/08_ASVs_screened/ASVs_{method}.no_pseudogenes.screen_hist_mins_mqc.json",
             ]
         )
-    if "multilvl" in config["class_method"]:
+    if class_method == "multilvl":
         out.append(
             "results/10_taxonomy/stats_mqc.{method}.{screening}.multilvl.{refdb}.csv"
         )
@@ -386,9 +387,11 @@ rule generate_report:
     input:
         community_table="results/09_community_table/community_table.{method}.{screening}.txt",
         custom_mqc_config="config/multiqc_config.yaml",  # TODO
-        mqc_files=mqc_files(config["paired"], config["protein_coding"]),
+        mqc_files=lambda wildcards: mqc_files(
+            config["paired"], config["protein_coding"], wildcards.class_method
+        ),
     output:
-        "results/12_report/multiqc_report.{method}.{screening}.{refdb}.html",
+        "results/12_report/multiqc_report.{method}.{screening}.{class_method}.{refdb}.html",
     conda:
         "../envs/mb_multiqc.yaml"
     params:
@@ -398,7 +401,7 @@ rule generate_report:
     message:
         "Generating MultiQC report"
     log:
-        "logs/12_report/generate_report.{method}.{screening}.{refdb}.log",
+        "logs/12_report/generate_report.{method}.{screening}.{class_method}.{refdb}.log",
     shell:
         """
         multiqc {input.mqc_files} \

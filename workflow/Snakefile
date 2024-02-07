@@ -35,20 +35,22 @@ if config["protein_coding"]:
 else:
     screening = "no_chimeras"
 
+# Database depends on the classification method chosen, get both from config
+class_method_x_refdb = [class_method + "." + alias for class_method in config["class_method"] for alias in config["dbpaths"][class_method]]
+
 
 rule all:
     input:
         expand(
             [
-                "results/10_taxonomy/krona_plot.{method}.{screening}.{class_method}.{refdb}.html",
-                "results/10_taxonomy/taxonomy.{method}.{screening}.{class_method}.{refdb}.txt",
-                "results/11_merged/community_and_tax_merged.{method}.{screening}.{class_method}.{refdb}.txt",
-                "results/12_report/multiqc_report.{method}.{screening}.{refdb}.html",
+                "results/10_taxonomy/krona_plot.{method}.{screening}.{class_method_x_refdb}.html",
+                "results/10_taxonomy/taxonomy.{method}.{screening}.{class_method_x_refdb}.txt",
+                "results/11_merged/community_and_tax_merged.{method}.{screening}.{class_method_x_refdb}.txt",
+                "results/12_report/multiqc_report.{method}.{screening}.{class_method_x_refdb}.html",
                 "results/13_phylogeny/ASVs_{method}.{screening}.{treeprog}.faiths_pd.tsv",
             ],
             method=config["denoising"]["method"],
             screening=screening,
             treeprog=config["treeprog"],
-            refdb=config["refdb"],
-            class_method=config["class_method"],
+            class_method_x_refdb=class_method_x_refdb,
         ),

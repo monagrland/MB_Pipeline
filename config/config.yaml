@@ -50,7 +50,7 @@ coding:
 denoising:
   alpha : 5        # Clustering parameter alpha used for Unoise or DnoisE
   minsize : 8                   # Minimum sequence cluster size to retain
-  method: ["dnoise"]  # either "unoise" or "dnoise" or both
+  method: ["dnoise", "unoise"]  # either "unoise" or "dnoise" or both
 
 # Options for DnoisE
 dnoise_opts:
@@ -71,27 +71,23 @@ treeprog: "fasttree" # Options: fasttree, iqtree
 
 class_method: ["sintax", "multilvl"]
 
-refdb: ["test"]
-
-# Paths to ref databases in Fasta or UDB format with SINTAX headers organized
-# into sets, so that output from different databases can be compared.
+# Paths to ref databases grouped by classification method and alias, so that
+# output from different databases can be compared.
 # Paths are relative to workdir
 
-# two databases for the legacy "hierarchical classification" script
-
-dbpaths:
-  multilvl:
-    direct_dbs:
-      test:
-        - "testdata/db/bold_coi-5p_test.fasta"
-    hierarchical_db:
-      test:
-        "testdata/db/bold_coi-5p_test.fasta"
+dbpaths: # Ref database used by all methods
   sintax:
     test:
       "testdata/db/bold_coi-5p_test.fasta"
+  multilvl:
+    test: # alias for the db set
+      narrow:
+        - "testdata/db/bold_coi-5p_test.fasta"
+      broad:
+        "testdata/db/bold_coi-5p_test.fasta"
 
-classification_threshold: 0.90
-
-hierarchical_threshold: 0.8
-
+class_thresholds:
+  sintax: 0.8
+  multilvl:
+    narrow: 0.90 # threshold to use with narrow DB
+    broad: 0.8 # threshold for broad DB

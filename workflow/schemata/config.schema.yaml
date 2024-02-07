@@ -118,6 +118,29 @@ properties:
   class_thresholds:
     type: object
     description: "Cutoff score for taxonomic classification, keyed by classification method."
+    properties:
+      multilvl:
+        type: object
+        description: "Cutoff scores for multilvl classifier"
+        properties:
+          narrow:
+            type: number
+            default: 0.90
+            minimum: 0
+            maximum: 1
+            description: "Threshold to use with narrow DB"
+          broad:
+            type: number
+            default: 0.8
+            minimum: 0
+            maximum: 1
+            description: "Threshold for broad DB"
+      sintax:
+        type: number
+        default: 0.8
+        minimum: 0
+        maximum: 1
+        description: "Minimum SINTAX support value to retain a taxonomic classification at a given rank"
 
 required:
   - reads_table

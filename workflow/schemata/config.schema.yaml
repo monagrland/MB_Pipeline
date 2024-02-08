@@ -83,9 +83,13 @@ properties:
         - alpha
         - minsize
         - method
+  test_entropy_ratio:
+    type: boolean
+    default: false
+    description: "Plot entropy ratio across range of denoising parameter values?"
   dnoise_opts:
     type: object
-    description: "Options to pass to DnoisE"
+    description: "Denoising parameter values to use for calculating entropy ratio"
     properties:
       alpha_range:
         type: array

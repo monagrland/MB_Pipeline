@@ -1,0 +1,62 @@
+from snakemake.utils import validate, min_version
+
+min_version("8.1")
+validate(config, "schemata/config.schema.yaml")
+
+conda:
+    "envs/global.yaml"
+
+import os
+import json
+import pandas as pd
+import csv
+import gzip
+
+reads_df = pd.read_table(config["reads_table"], sep="\t")
+validate(reads_df, "schemata/reads_df.schema.yaml")
+reads_df = reads_df.set_index("sample", drop=False)
+samples = reads_df["sample"].drop_duplicates()
+
+if config["paired"]:
+
+    include: "rules/paired_end.smk"
+
+elif not config["paired"]:
+
+    include: "rules/single_end.smk"
+
+
+include: "rules/common.smk"
+include: "rules/coding.smk"
+
+add = []
+
+if config["protein_coding"]:
+    screening = "no_pseudogenes"
+    if config["test_entropy_ratio"]:
+        add = [
+            "results/07_ASVs/entropy_ratio_denoising_plot.png",
+            "results/07_ASVs/entropy_ratio_minsize_plot.png",
+        ]
+else:
+    screening = "no_chimeras"
+
+# Database depends on the classification method chosen, get both from config
+class_method_x_refdb = [class_method + "." + alias for class_method in config["class_method"] for alias in config["dbpaths"][class_method]]
+
+
+rule all:
+    input:
+        expand(
+            [
+                "results/10_taxonomy/krona_plot.{method}.{screening}.{class_method_x_refdb}.html",
+                "results/10_taxonomy/taxonomy.{method}.{screening}.{class_method_x_refdb}.txt",
+                "results/11_merged/community_and_tax_merged.{method}.{screening}.{class_method_x_refdb}.txt",
+                "results/12_report/multiqc_report.{method}.{screening}.{class_method_x_refdb}.html",
+                "results/13_phylogeny/ASVs_{method}.{screening}.{treeprog}.faiths_pd.tsv",
+            ],
+            method=config["denoising"]["method"],
+            screening=screening,
+            treeprog=config["treeprog"],
+            class_method_x_refdb=class_method_x_refdb,
+        ) + add,

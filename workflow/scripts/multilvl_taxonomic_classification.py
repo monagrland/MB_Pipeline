@@ -15,8 +15,8 @@ import csv
 import sys
 import numpy as np
 
-TAXONOMIC_RANKS = [
-    "Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]
+TAXONOMIC_RANKS = ["Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"]
+
 
 def arg():
     parser = argparse.ArgumentParser("Multilevel direct taxonomic classification")
@@ -295,10 +295,15 @@ def get_tax_from_samfile(samfile_path):
     # The following loop is needed to account for missing taxonomic
     tax_lst_of_lst_with_NA = []
     for tax_lst in tax_lst_of_lst:
-        ranks_let = ['k','p','c','o','f','g','s']
+        ranks_let = ["k", "p", "c", "o", "f", "g", "s"]
         # taxon elements are formatted like: k:Metazoa
-        taxdict = { taxon.split(":")[0] : ":".join(taxon.split(":")[1:]) for taxon in tax_lst }
-        taxonomy_with_NA = [(":".join([r, taxdict[r]]) if r in taxdict else r + ":NA") for r in ranks_let]
+        taxdict = {
+            taxon.split(":")[0]: ":".join(taxon.split(":")[1:]) for taxon in tax_lst
+        }
+        taxonomy_with_NA = [
+            (":".join([r, taxdict[r]]) if r in taxdict else r + ":NA")
+            for r in ranks_let
+        ]
         tax_lst_of_lst_with_NA.append(taxonomy_with_NA)
 
     sam_df[TAXONOMIC_RANKS] = tax_lst_of_lst_with_NA  # add taxonomy as seperate columns
@@ -405,28 +410,34 @@ def statistics(log, stats_table_path):
 
 
 def main(args):
-    output = args['output']
-    logfile = args['log'] if args['log'] is not None else f"{os.path.splitext(output)[0]}.log"
+    output = args["output"]
+    logfile = (
+        args["log"] if args["log"] is not None else f"{os.path.splitext(output)[0]}.log"
+    )
     count = 0
-    for db in args['db_list']:
+    for db in args["db_list"]:
         count += 1
         direct_classification(
-            args['ASVs'],
+            args["ASVs"],
             db,
-            args['threshold'],
+            args["threshold"],
             output,
-            str(args['threads']),
+            str(args["threads"]),
             str(count),
             logfile,
         )
         samfile_path = f"{os.path.splitext(output)[0]}.{count}.direct.sam"
         tax_from_samfile_df = get_tax_from_samfile(samfile_path)
-        args['ASVs'], hit_ASVs = format_dir_classification(args['ASVs'], output, str(count))
+        args["ASVs"], hit_ASVs = format_dir_classification(
+            args["ASVs"], output, str(count)
+        )
         if count == 1:
             taxonomy_sans_multihits = tax_from_samfile_df
             hits_df = hit_ASVs
         else:
-            taxonomy_sans_multihits = pd.concat([taxonomy_sans_multihits, tax_from_samfile_df])
+            taxonomy_sans_multihits = pd.concat(
+                [taxonomy_sans_multihits, tax_from_samfile_df]
+            )
             hits_df = pd.concat([hits_df, hit_ASVs])
         hits_df.to_csv(
             os.path.splitext(output)[0] + ".direct.full.txt",
@@ -435,14 +446,16 @@ def main(args):
             index=None,
         )
     hierarchical_classification(
-        args['ASVs'], args['hierarchical_db'], output, args['threads'], logfile)
+        args["ASVs"], args["hierarchical_db"], output, args["threads"], logfile
+    )
     formatted_hierarchical_classification = format_hierarchical_classification(
-        output, args['sintax_cutoff']
+        output, args["sintax_cutoff"]
     )
     if len(hits_df) > 0:
         formatted_direct_classification = taxonomy_sans_multihits
         taxonomy_df = pd.concat(
-            [formatted_direct_classification, formatted_hierarchical_classification], ignore_index=True
+            [formatted_direct_classification, formatted_hierarchical_classification],
+            ignore_index=True,
         )
     else:
         taxonomy_df = formatted_hierarchical_classification
@@ -457,13 +470,11 @@ def main(args):
 
     taxonomy_df.to_csv(output, sep="\t")
     tax_df_for_krona = taxonomy_df.drop(["ASV"], axis=1)
-    tax_df_for_krona.to_csv(
-        args['krona'], sep="\t", header=False, index=False
-    )
+    tax_df_for_krona.to_csv(args["krona"], sep="\t", header=False, index=False)
 
-    statistics(logfile, args['stats_mqc'])
+    statistics(logfile, args["stats_mqc"])
 
-    if not args['keep_results']:
+    if not args["keep_results"]:
         out_directory = os.path.dirname(output)
         subprocess.run(f"rm {out_directory}/*.direct.*", shell=True)
         subprocess.run(f"rm {out_directory}/*.hierarchical.*", shell=True)
@@ -471,20 +482,20 @@ def main(args):
 
 
 if __name__ == "__main__":
-    try: # Called from within Snakemake pipeline
+    try:  # Called from within Snakemake pipeline
         args = {
-            "db_list" : snakemake.config['direct_dbs'],
-            "hierarchical_db" : snakemake.config['hierarchical_db'],
-            "threshold" : snakemake.config['classification_threshold'],
-            "keep_results" : snakemake.params['keep_results'],
-            "sintax_cutoff" : snakemake.params['hierarchical_threshold'],
-            "ASVs" : snakemake.input['ASVs'],
-            "output" : snakemake.output['base'],
-            "krona" : snakemake.output['krona'],
-            "stats_mqc" : snakemake.output['stats_mqc'],
-            "threads" : snakemake.threads,
-            "log" : snakemake.log[0],
+            "db_list": snakemake.input["direct_dbs"],
+            "hierarchical_db": snakemake.input["hierarchical_db"],
+            "threshold": snakemake.params["threshold_narrow"],
+            "keep_results": snakemake.params["keep_results"],
+            "sintax_cutoff": snakemake.params["threshold_broad"],
+            "ASVs": snakemake.input["ASVs"],
+            "output": snakemake.output["base"],
+            "krona": snakemake.output["krona"],
+            "stats_mqc": snakemake.output["stats_mqc"],
+            "threads": snakemake.threads,
+            "log": snakemake.log[0],
         }
-    except NameError: # Called from commandline
-        args = vars(arg()) # convert to dict
+    except NameError:  # Called from commandline
+        args = vars(arg())  # convert to dict
     main(args=args)

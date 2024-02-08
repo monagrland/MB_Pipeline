@@ -1,0 +1,94 @@
+# General configuration --------------------------------------------------------
+#
+# Table of samples and read files; path is relative to workdir
+reads_table:
+  "config/reads.tsv"
+
+# Are input reads paired?
+# "true" or "false" only
+paired: true
+
+# Is target sequence protein-coding?
+# "true" or "false" only
+protein_coding: true
+
+# Read trimming, merging, and filtering ----------------------------------------
+
+# Adapter trimming options, passed to cutadapt
+adapter_trimming_options:
+  5p: "CCNGAYATRGCNTTTYCCNCG"
+  3p: "TANACYTCNGGRTGNCCRAARAAYCA"
+  min_overlap: 23
+  others_common: "--minimum-length 1"
+
+# Read merging options, passed to vsaerch - For paired reads only
+merge_options:
+  - "--fastq_allowmergestagger"
+  - "--fastq_minovlen 100"
+  - "--fastq_maxdiffs 15"
+  - "--fastq_eeout"
+
+# Merged read filtering options, passed to vsearch
+filter_options:
+  - "--fastq_maxee 1.0"
+  - "--fastq_minlen 100"
+  - "--fastq_maxlen 800"
+  - "--fastq_maxns 0"
+  - "--fasta_width 0"
+
+# Coding sequences only --------------------------------------------------------
+#
+coding:
+  code: 5   # NCBI translation table number
+  frame: 3  # Expected codon position (1, 2, or 3) of the first base
+  hmm:      # HMM to screen translations, path relative to workdir
+    "testdata/db/bold_arthropod.hmm"
+
+# Denoising --------------------------------------------------------------------
+# Update these default values after viewing diagnostics
+#
+denoising:
+  alpha : 5        # Clustering parameter alpha used for Unoise or DnoisE
+  minsize : 8                   # Minimum sequence cluster size to retain
+  method: ["dnoise", "unoise"]  # either "unoise" or "dnoise" or both
+
+# Options to produce entropy ratio plots with DnoisE (protein coding only)
+test_entropy_ratio: false # true to test denoising parameter values
+dnoise_opts:
+  alpha_range :    # Range of alpha to test for entropy ratio diagnostics
+    [1,5,10]
+  minsize_range:   # Range of minsize to test for entropy ratio diagnostics
+    [2,10]
+
+# Community table summary ------------------------------------------------------
+#
+community_table_options:
+  - "--id 0.97"
+  - "--strand plus"
+
+# Taxonomic classification -----------------------------------------------------
+#
+treeprog: "fasttree" # Options: fasttree, iqtree
+
+class_method: ["sintax", "multilvl"]
+
+# Paths to ref databases grouped by classification method and alias, so that
+# output from different databases can be compared.
+# Paths are relative to workdir
+
+dbpaths: # Ref database used by all methods
+  sintax:
+    test:
+      "testdata/db/bold_coi-5p_test.fasta"
+  multilvl:
+    test: # alias for the db set
+      narrow:
+        - "testdata/db/bold_coi-5p_test.fasta"
+      broad:
+        "testdata/db/bold_coi-5p_test.fasta"
+
+class_thresholds:
+  sintax: 0.8
+  multilvl:
+    narrow: 0.90 # threshold to use with narrow DB
+    broad: 0.8 # threshold for broad DB

@@ -29,9 +29,15 @@ elif not config["paired"]:
 include: "rules/common.smk"
 include: "rules/coding.smk"
 
+add = []
 
 if config["protein_coding"]:
     screening = "no_pseudogenes"
+    if config["test_entropy_ratio"]:
+        add = [
+            "results/07_ASVs/entropy_ratio_denoising_plot.png",
+            "results/07_ASVs/entropy_ratio_minsize_plot.png",
+        ]
 else:
     screening = "no_chimeras"
 
@@ -53,4 +59,4 @@ rule all:
             screening=screening,
             treeprog=config["treeprog"],
             class_method_x_refdb=class_method_x_refdb,
-        ),
+        ) + add,

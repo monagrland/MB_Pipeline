@@ -167,12 +167,16 @@ The expected reading frame of the amplified metabarcoding fragment should be
 known, based on the PCR primers used, and denote the codon position (1, 2, or
 3) of the first base in the fragment.
 
+
+#### Choosing alpha and minsize values by comparing entropy ratio
+
 DnoisE can calculate the entropy ratio of codon positions 2 and 3 for different
 values of the denoising paramter alpha and minimum cluster size, to help in
 choosing a suitable value for alpha and min cluster size. Specify the range of
 alpha and minsize values to be tested:
 
 ```yaml
+test_entropy_ratio: false # true to test denoising parameter values
 dnoise_opts:
   alpha_range :    # Range of alpha to test for entropy ratio diagnostics
     [1,5,10]
@@ -185,6 +189,8 @@ and also produces plots of entropy ratio vs. alpha and minsize for the
 specified ranges. After reviewing the plots, the user can update the desired
 values for alpha and minsize under the key `denoising` and rerun the pipeline
 if necessary.
+
+This is only possible for protein-coding genes.
 
 
 ### Screening for non-target sequences and artefacts

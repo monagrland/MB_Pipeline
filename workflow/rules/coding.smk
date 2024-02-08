@@ -78,12 +78,14 @@ rule plot_entropy_ratio_vs_alpha:
             alpha=config["dnoise_opts"]["alpha_range"],
         ),
     output:
-        "diagnostics/entropy_ratio_denoising_plot.png",
+        "results/07_ASVs/entropy_ratio_denoising_plot.png",
     params:
         alphas=",".join([str(i) for i in config["dnoise_opts"]["alpha_range"]]),
         inputs=lambda wildcards, input: ",".join(input),
     conda:
         "../envs/mb_dnoise.yaml"
+    log:
+        "logs/07_ASVs/plot_entropy_ratio_vs_alpha.log",
     script:
         "../scripts/plot_entropy_ratio.py"
 
@@ -101,12 +103,14 @@ rule plot_entropy_ratio_vs_minsize:
             alpha=config["denoising"]["alpha"],
         ),
     output:
-        "diagnostics/entropy_ratio_minsize_plot.png",
+        "results/07_ASVs/entropy_ratio_minsize_plot.png",
     params:  # TODO update script arguments
         alphas=",".join([str(i) for i in config["dnoise_opts"]["minsize_range"]]),
         inputs=lambda wildcards, input: ",".join(input),
     conda:
         "../envs/mb_dnoise.yaml"
+    log:
+        "logs/07_ASVs/plot_entropy_ratio_vs_minsize.log",
     script:
         "../scripts/plot_entropy_ratio.py"
 

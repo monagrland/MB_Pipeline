@@ -52,7 +52,8 @@ denoising:
   minsize : 8                   # Minimum sequence cluster size to retain
   method: ["dnoise", "unoise"]  # either "unoise" or "dnoise" or both
 
-# Options for DnoisE
+# Options to produce entropy ratio plots with DnoisE (protein coding only)
+test_entropy_ratio: false # true to test denoising parameter values
 dnoise_opts:
   alpha_range :    # Range of alpha to test for entropy ratio diagnostics
     [1,5,10]

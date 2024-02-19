@@ -52,12 +52,12 @@ deploy Snakemake pipelines that have been published on platforms like GitHub or
 GitLab.
 
 You can deploy either a specific version with the `--tag` option, or a specific
-branch with `--branch`. The following deploys the `master` branch of the
-workflow to a new folder `my_deployment/`:
+branch with `--branch`. The following deploys version `v3.0.2` of the pipeline
+to a new folder `my_deployment/`:
 
 ```bash
 snakedeploy deploy-workflow https://github.com/monagrland/MB_Pipeline \
-  ./my_deployment --branch master
+  ./my_deployment --tag v3.0.2
 cd my_deployment
 ```
 

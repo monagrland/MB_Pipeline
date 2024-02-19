@@ -7,3 +7,4 @@ dependencies:
   - snakefmt
   - conda
   - mamba >=1.0.0
+  - pandas >=2.0

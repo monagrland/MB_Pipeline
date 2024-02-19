@@ -6,4 +6,5 @@ dependencies:
   - snakemake-minimal =8.4
   - snakefmt
   - conda
-  - mamba >=1.0.0
+  - mamba >=1.0.0, <2
+  - pandas >=2.0, <3

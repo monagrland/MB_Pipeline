@@ -1,0 +1,7 @@
+# .dockerignore
+results
+logs
+snakemake_8
+.snakemake
+.git
+.pytest_cache

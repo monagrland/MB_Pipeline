@@ -3,9 +3,6 @@ from snakemake.utils import validate, min_version
 min_version("8.1")
 validate(config, "schemata/config.schema.yaml")
 
-conda:
-    "envs/global.yaml"
-
 import os
 import json
 import pandas as pd

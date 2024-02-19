@@ -8,4 +8,4 @@ dependencies:
   - fasttree =2.1
   - scikit-bio =0.5.9
   - biom-format =2.1
-  - pandas =2.0
+  - pandas =2.0, <3

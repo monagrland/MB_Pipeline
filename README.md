@@ -51,10 +51,26 @@ releases page](https://github.com/monagrland/MB_Pipeline/releases).
 deploy Snakemake pipelines that have been published on platforms like GitHub or
 GitLab.
 
-The new workflow containing the customized config and input files can be saved
-and managed as a new git repository, independent of the MB_Pipeline repository.
+You can deploy either a specific version with the `--tag` option, or a specific
+branch with `--branch`. The following deploys the `master` branch of the
+workflow to a new folder `my_deployment/`:
 
-TODO
+```bash
+snakedeploy deploy-workflow https://github.com/monagrland/MB_Pipeline \
+  ./my_deployment --branch master
+cd my_deployment
+```
+
+The template configuration will be copied to the `config/` subfolder, and
+should be modified with your desired configuration.
+
+This usage pattern is relevant when you wish to apply the same pipeline to
+different sets of input data, each requiring their own configuration. In this
+way, each separate deployment can be run and put under version control,
+indepedently of each other and the the pipeline itself.
+
+To rerun under a new pipeline version, simply change the version specified in
+the module directive in the Snakefile.
 
 
 ### Option 3. Deploy as a module in another workflow
@@ -82,15 +98,18 @@ Configuration options are described in the `config/README.md` file.
 ## Execution and performance parameters
 
 The pipeline is executed with `snakemake`, specifying the path to the config
-file with the `--configfile` parameter, and other options.
+file with the `--configfile` parameter, and other options. `mamba` or `conda`
+should also be in your path. The python package `pandas` should be available in
+the environment.
 
 Output will be written to the subfolder `results/`, and log files to `logs/`,
 which will be created if they do not already exist.
 
 Examine and/or modfiy the bash script `run_pipeline.sh` for typical defaults.
-The script first installs Snakemake itself in a Conda environment at
-`./snakemake_8`, which will be activated before running the pipeline, if this
-environment does not already exist at this path.
+The script first installs Snakemake and other dependencies required to run the
+pipeline in a Conda environment at `./snakemake_8`, which will be activated
+before running the pipeline, if this environment does not already exist at this
+path.
 
 ```bash
 bash run_pipeline.sh # uses config file at config/config.yaml by default

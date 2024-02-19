@@ -4,6 +4,6 @@ channels:
   - nodefaults
 dependencies:
   - dnoise =1.4.1
-  - pandas =2.0
+  - pandas =2.0, <3
   - matplotlib-base =3.6
   - biopython =1.81

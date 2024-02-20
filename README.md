@@ -47,6 +47,8 @@ releases page](https://github.com/monagrland/MB_Pipeline/releases).
 
 ### Option 2. Deploy with Snakedeploy
 
+(For pipeline versions v3.0.2 and above only.)
+
 [Snakedeploy](https://snakedeploy.readthedocs.io/en/latest/) is a tool to
 deploy Snakemake pipelines that have been published on platforms like GitHub or
 GitLab.
@@ -70,7 +72,8 @@ way, each separate deployment can be run and put under version control,
 indepedently of each other and the the pipeline itself.
 
 To rerun under a new pipeline version, simply change the version specified in
-the module directive in the Snakefile.
+the module directive in the Snakefile. The config may also have to be updated,
+if the config schema has changed.
 
 
 ### Option 3. Deploy as a module in another workflow

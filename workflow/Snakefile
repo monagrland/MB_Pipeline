@@ -26,6 +26,7 @@ elif not config["paired"]:
 include: "rules/common.smk"
 include: "rules/coding.smk"
 
+
 add = []
 
 if config["protein_coding"]:
@@ -39,7 +40,11 @@ else:
     screening = "no_chimeras"
 
 # Database depends on the classification method chosen, get both from config
-class_method_x_refdb = [class_method + "." + alias for class_method in config["class_method"] for alias in config["dbpaths"][class_method]]
+class_method_x_refdb = [
+    class_method + "." + alias
+    for class_method in config["class_method"]
+    for alias in config["dbpaths"][class_method]
+]
 
 
 rule all:
@@ -56,4 +61,5 @@ rule all:
             screening=screening,
             treeprog=config["treeprog"],
             class_method_x_refdb=class_method_x_refdb,
-        ) + add,
+        )
+        + add,

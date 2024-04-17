@@ -54,8 +54,8 @@ rule merge:
     threads: 1
     log:
         "logs/02_merging/{sample}.txt",
-    shell:  # the escaping backslash before \; is required, but causes a syntax warning
-        """
+    shell:  # use raw string r"" because backslash in \; else causes syntax warning
+        r"""
         vsearch --fastq_mergepairs {input.fw} --reverse {input.rv} \
         --fastqout {output} {params.options} --relabel {wildcards.sample}_ \
         --label_suffix \;sample={wildcards.sample} --threads {threads} &>> {log}

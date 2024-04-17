@@ -1,9 +1,10 @@
 # Metabarcoding - Pipeline
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.10986177.svg)](https://doi.org/10.5281/zenodo.10986177)
+
 This is a Metabarcoding Pipeline developed for Illumina Sequencing Data at the
 Thuenen Institute of Biodiversity, Braunschweig by Wiebke Sickel & Lasse
 Krueger, with contributions from Brandon Seah.
-
 
 ## Prerequisites
 

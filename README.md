@@ -140,7 +140,7 @@ pipeline with the same output directory, you get an error message. To unlock
 the directory, simply run the following script:
 
 ```bash
-bash unlock.sh config/config.yaml
+./unlock.sh
 ```
 
 

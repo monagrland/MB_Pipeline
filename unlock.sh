@@ -12,7 +12,8 @@ then
 else
   echo "Environment with Snakemake found at ./snakemake_8"
 fi
+CORES=12
 conda activate ./snakemake_8
 echo "Activated conda environment."
-snakemake --sdm conda --conda-frontend mamba --notemp --configfile config/config.yaml --unlock $@
+snakemake --sdm conda --cores $CORES --conda-frontend mamba --notemp --configfile config/config.yaml --unlock $@
 echo "Unlocked"

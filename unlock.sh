@@ -1,9 +1,19 @@
 #!/bin/bash
-# A shell script to unlock the directories
+
+# Assumes that conda is in path, and that mamba and conda are in base environment
 eval "$(conda shell.bash hook)"
-conda env create -n mb_snakemake --file "$PWD/envs/mb_snakemake.yaml" #creates the conda environment if you have the correct permissions and if it doesnt exist yet.
-THREADS=($(grep "threads:" $1 | sed s/"threads: "/""/))
-conda activate mb_snakemake
+# Test for snakemake environment in current folder
+mamba list -p ./snakemake_8 &> /dev/null
+RETVAL=$?
+if [[ $RETVAL == 1 ]]
+then
+  echo "Creating environment with Snakemake at ./snakemake_8"
+  mamba env create -p ./snakemake_8 --file "$PWD/workflow/envs/snakemake.yaml"
+else
+  echo "Environment with Snakemake found at ./snakemake_8"
+fi
+CORES=12
+conda activate ./snakemake_8
 echo "Activated conda environment."
-snakemake --use-conda --cores $THREADS --conda-frontend conda --configfile $1 --unlock
-echo "Finished unlocking."
+snakemake --sdm conda --cores $CORES --conda-frontend mamba --notemp --configfile config/config.yaml --unlock $@
+echo "Unlocked"

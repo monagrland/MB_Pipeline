@@ -3,5 +3,5 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - mafft =7.520
+  - mafft =7.526
   - pytransaln =0.2.1

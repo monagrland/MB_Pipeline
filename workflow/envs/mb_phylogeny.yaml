@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  - mafft =7.520
+  - mafft =7.526
   - iqtree =2.2
   - fasttree =2.1
   - scikit-bio =0.5.9

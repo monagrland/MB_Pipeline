@@ -284,8 +284,16 @@ rule taxonomy:
         stats_mqc="results/10_taxonomy/stats_mqc.{method}.{screening}.multilvl.{refdb}.csv",
     params:
         keep_results=True,
-        threshold_narrow=config["class_thresholds"]["multilvl"]["narrow"] if "multilvl" in config["class_thresholds"] else None,
-        threshold_broad=config["class_thresholds"]["multilvl"]["broad"] if "multilvl" in config["class_thresholds"] else None,
+        threshold_narrow=(
+            config["class_thresholds"]["multilvl"]["narrow"]
+            if "multilvl" in config["class_thresholds"]
+            else None
+        ),
+        threshold_broad=(
+            config["class_thresholds"]["multilvl"]["broad"]
+            if "multilvl" in config["class_thresholds"]
+            else None
+        ),
     threads: workflow.cores
     message:
         "Starting Multilevel Taxonomic Classification"
